@@ -2,6 +2,7 @@
 #### The app is a stackoverflow clone, 20/06/2025
 #### **By Kelvin Kipchumba**
 ## Description
+Just a reference
 The application includes a  landing page which shows the popular colections and a footer with contact details. 
 There is also a shop, login and register pages.
 
