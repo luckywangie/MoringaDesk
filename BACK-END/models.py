@@ -9,3 +9,9 @@ class FollowUp(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
     answer_id = db.Column(db.Integer, db.ForeignKey('answer.id'))
 
+class Votes(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    solution_id = db.Column(db.Integer, db.ForeignKey('answer.id'))
+
+
