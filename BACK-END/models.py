@@ -26,3 +26,9 @@ class Tags(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     question_tags = db.relationship('QuestionTags', backref='tag', lazy=True)
+
+class QuestionTags(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
+    tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'))
+
