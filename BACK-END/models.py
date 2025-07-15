@@ -24,7 +24,7 @@ class Tags(db.Model):
     name = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+# Relationships
     question_tags = db.relationship('QuestionTags', backref='tag', lazy=True)
 
 class QuestionTags(db.Model):
@@ -38,7 +38,7 @@ class Category(db.Model):
     category_name = db.Column(db.String(255))
     created_by = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+#Relationships
     questions = db.relationship('Question', backref='category', lazy=True)
     reports = db.relationship('Reports', backref='category', lazy=True)
 
@@ -61,4 +61,8 @@ class FAQs(db.Model):
     answer = db.Column(db.String(255))
     category = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.String(255))
+
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    # Relationships
+    user = db.relationship('User', backref='faqs', lazy=True)
