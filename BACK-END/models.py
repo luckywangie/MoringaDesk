@@ -32,3 +32,13 @@ class QuestionTags(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
     tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'))
 
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
+    category_name = db.Column(db.String(255))
+    created_by = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    questions = db.relationship('Question', backref='category', lazy=True)
+    reports = db.relationship('Reports', backref='category', lazy=True)
+
