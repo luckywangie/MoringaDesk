@@ -42,3 +42,7 @@ class Category(db.Model):
     questions = db.relationship('Question', backref='category', lazy=True)
     reports = db.relationship('Reports', backref='category', lazy=True)
 
+class Reports(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
