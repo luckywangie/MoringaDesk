@@ -1,32 +1,27 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from models import db  # importing the db instance from your models.py
+from flask_migrate import Migrate
+from models import db  # db is already created in models.py
 
+# Factory function for the Flask application
 def create_app():
     app = Flask(__name__)
 
-    # Configuration for the database
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'  # You can change this to PostgreSQL or MySQL URI
+    # Configurations
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'  # Change to PostgreSQL/MySQL URI in production
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Initialize app with SQLAlchemy
+    # Initialize database and migrations
     db.init_app(app)
-
-    # Register blueprints here if needed in the future
-    # from yourapp.routes import main as main_blueprint
-    # app.register_blueprint(main_blueprint)
+    migrate = Migrate(app, db)
 
     @app.route('/')
     def home():
-        return "Flask App with Models is Running!"
-
-    # Create database tables before the first request
-    @app.before_first_request
-    def create_tables():
-        db.create_all()
+        return "Flask App with SQLAlchemy and Migrations is running!"
 
     return app
 
+# Allow running the app directly with python app.py
 if __name__ == '_main_':
     app = create_app()
     app.run(debug=True)
