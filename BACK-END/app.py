@@ -15,13 +15,14 @@ def create_app():
     db.init_app(app)
     migrate = Migrate(app, db)
 
+    # Example root route
     @app.route('/')
     def home():
         return "Flask App with SQLAlchemy and Migrations is running!"
 
     return app
 
-# Allow running the app directly with python app.py
-if __name__ == '_main_':
+# Allow running the app directly with `python app.py`
+if __name__ == '__main__':
     app = create_app()
     app.run(debug=True)
