@@ -19,3 +19,10 @@ class RelatedQuestions(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
     related_question_id = db.Column(db.Integer)
 
+class Tags(db.Model):
+    id = db.Column(db.BigInteger, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    type = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    question_tags = db.relationship('QuestionTags', backref='tag', lazy=True)
