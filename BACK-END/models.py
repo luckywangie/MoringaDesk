@@ -1,6 +1,4 @@
 from flask_sqlalchemy import SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 from datetime import datetime
 
@@ -27,7 +25,7 @@ class User(db.Model):
     
   
 class Question (db.Model):
-    __table__name__ = 'questions'
+    __tablename__ = 'questions'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
@@ -57,7 +55,10 @@ class Answers (db.Model):
     # Relationships
     user = db.relationship('User', backref='answers')
     question = db.relationship('Question', backref='answers')
-    
+
+
+
+
     
     
 
