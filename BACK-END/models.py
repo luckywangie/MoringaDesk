@@ -1,8 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
 from datetime import datetime
+
+db = SQLAlchemy()
 
 class User(db.Model):
     __tablename__ = 'users'
