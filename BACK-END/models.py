@@ -54,3 +54,11 @@ class Notifications(db.Model):
     message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_read = db.Column(db.Boolean, default=False)
+
+class FAQs(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question = db.Column(db.String(255))
+    answer = db.Column(db.String(255))
+    category = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.String(255))
