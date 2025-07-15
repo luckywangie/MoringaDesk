@@ -16,11 +16,16 @@ class User(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     
     # Relationships
+    questions = db.relationship('Question', backref='user', cascade='all, delete-orphan')
+    answers = db.relationship('Answers', backref='user', cascade='all, delete-orphan')
+    votes = db.relationship('Vote', backref='user', cascade='all, delete-orphan')
+    notifications = db.relationship('Notification', backref='user', cascade='all, delete-orphan')
+    follow_up = db.relationship('Follow_Up', backref='user', cascade='all, delete-orphan')
+    reports = db.relationship('Report', backref='user', cascade='all, delete-orphan')
+    faqs = db.relationship('FAQ', backref='user', cascade='all, delete-orphan')
+    tags = db.relationship('Tag', backref='user', cascade='all, delete-orphan')
     
-
-    def __repr__(self):
-        return f'<User {self.username}>'
-    
+  
 class Question (db.Model):
     __table__name__ = 'questions'
     id = db.Column(db.Integer, primary_key=True)
@@ -33,11 +38,12 @@ class Question (db.Model):
     language = db.Column(db.String(50), nullable=False)
     
     # Relationships
+    related_questions = db.relationship('RelatedQuestions', foreign_keys='RelatedQuestions.question_id', backref='question', lazy=True)
+    answer =db.relationship('Answers', backref='question', cascade='all, delete-orphan')
     user = db.relationship('User', backref='questions')
     question_tags = db.relationship('QuestionTag', backref='question', cascade='all, delete-orphan')
     category = db.relationship('Category', backref='questions')
-    def __repr__(self):
-        return f'<Question {self.title}>'
+    
     
 class Answers (db.Model):
     __tablename__ = 'answers'
@@ -52,7 +58,6 @@ class Answers (db.Model):
     user = db.relationship('User', backref='answers')
     question = db.relationship('Question', backref='answers')
     
-    def __repr__(self):
-        return f'<Answer {self.id} for Question {self.question_id}>'
+    
     
 
