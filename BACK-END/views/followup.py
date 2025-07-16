@@ -5,7 +5,7 @@ from views.auth import token_required
 followup_bp = Blueprint('followup', __name__, url_prefix='/followup')
 
 
-# ✅ Create Follow-up (User follows a question or answer)
+#  Create Follow-up (User follows a question or answer)
 @followup_bp.route('/', methods=['POST'])
 @token_required
 def create_followup(current_user):
@@ -26,7 +26,7 @@ def create_followup(current_user):
     return jsonify({'message': 'Follow-up created', 'id': followup.id}), 201
 
 
-# ✅ Get all follow-ups for current user
+# Get all follow-ups for current user
 @followup_bp.route('/', methods=['GET'])
 @token_required
 def get_user_followups(current_user):
@@ -40,7 +40,7 @@ def get_user_followups(current_user):
     ]), 200
 
 
-# ✅ Get a specific follow-up
+# Get a specific follow-up
 @followup_bp.route('/<int:followup_id>', methods=['GET'])
 @token_required
 def get_followup(current_user, followup_id):
@@ -55,7 +55,7 @@ def get_followup(current_user, followup_id):
     }), 200
 
 
-# ✅ Update a follow-up (e.g., change followed question/answer)
+# Update a follow-up (e.g., change followed question/answer)
 @followup_bp.route('/<int:followup_id>', methods=['PUT'])
 @token_required
 def update_followup(current_user, followup_id):
@@ -71,7 +71,7 @@ def update_followup(current_user, followup_id):
     return jsonify({'message': 'Follow-up updated'}), 200
 
 
-# ✅ Delete follow-up (Unfollow)
+# Delete follow-up (Unfollow)
 @followup_bp.route('/<int:followup_id>', methods=['DELETE'])
 @token_required
 def delete_followup(current_user, followup_id):
