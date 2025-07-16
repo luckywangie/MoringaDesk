@@ -9,13 +9,13 @@ from views.auth import auth_bp
 from views.question import question_bp
 from views.answers import answers_bp
 from views.votes import votes_bp
-from views.followup import follow_up_bp
+from views.followup import followup_bp
 from views.notifications import notification_bp
-from views.reports import report_bp
-from views.tags import tag_bp
+from views.reports import reports_bp
+from views.tags import tags_bp
 from views.relatedquestions import related_questions_bp
 from views.category import category_bp
-from views.faqs import faq_bp
+from views.faqs import faqs_bp
 
 def create_app():
     app = Flask(__name__)
@@ -33,13 +33,13 @@ def create_app():
     app.register_blueprint(question_bp)
     app.register_blueprint(answers_bp)
     app.register_blueprint(votes_bp)
-    app.register_blueprint(follow_up_bp)
+    app.register_blueprint(followup_bp)
     app.register_blueprint(notification_bp)
-    app.register_blueprint(report_bp)
-    app.register_blueprint(tag_bp)
+    app.register_blueprint(reports_bp)
+    app.register_blueprint(tags_bp)
     app.register_blueprint(related_questions_bp)
     app.register_blueprint(category_bp)
-    app.register_blueprint(faq_bp)
+    app.register_blueprint(faqs_bp)
 
     # Example root route
     @app.route('/')
