@@ -1,9 +1,14 @@
-// src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+
+import { UserProvider } from './context/UserContext';
+import { AdminProvider } from './context/AdminContext';
+
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import Home from './pages/Home';
 import About from './pages/About';
@@ -19,27 +24,33 @@ import Questions from './pages/Questions';
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col bg-gray-100">
-        <Navbar />
-        <main className="flex-grow p-4">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/ask-question" element={<AskQuestion />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/faqs" element={<FAQs />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/question-answer" element={<QuestionAnswer />} />
-            <Route path="/questions" element={<Questions />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
+    <UserProvider>
+      <AdminProvider>
+        <Router>
+          {/* ✅ Removed global background classes from the wrapper */}
+          <div className="min-h-screen flex flex-col text-gray-800 dark:text-white transition-colors duration-300">
+            <Navbar />
+            <main className="flex-grow">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/ask-question" element={<AskQuestion />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/faqs" element={<FAQs />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/question-answer" element={<QuestionAnswer />} />
+                <Route path="/questions" element={<Questions />} />
+              </Routes>
+            </main>
+            <Footer />
+            <ToastContainer position="top-right" autoClose={3000} />
+          </div>
+        </Router>
+      </AdminProvider>
+    </UserProvider>
   );
 }
 
