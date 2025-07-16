@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy  # noqa: F401
 from flask_migrate import Migrate  # noqa: F401
 from flask_cors import CORS
 from models import db
