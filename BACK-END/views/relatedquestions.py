@@ -1,5 +1,6 @@
 from models import db, RelatedQuestions
 from flask import jsonify, request, Blueprint
+from views.auth import token_required
 
 related_questions_bp = Blueprint('related_questions', __name__)
 @related_questions_bp.route('/api/related-questions', methods=['POST'])

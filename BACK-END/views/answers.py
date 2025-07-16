@@ -1,6 +1,7 @@
 from models import db, Answers, Question
 from flask import Flask, jsonify, request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from views.auth import token_required
 
 answers_bp = Blueprint('answers', __name__)
 @answers_bp.route('/api/questions/<int:question_id>/answers', methods=['POST'])

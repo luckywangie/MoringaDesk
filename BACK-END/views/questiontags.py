@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, QuestionTag
+from views.auth import token_required
 
 question_tags_bp = Blueprint('question_tags', __name__)
 
