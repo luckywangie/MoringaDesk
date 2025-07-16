@@ -105,7 +105,7 @@ with app.app_context():
     # Seed FAQs
     faq1 = FAQs(
         question="How do I reset my password?",
-        answer="Use the forgot password link on the login page.",
+        answer="Use the forgot pahttp://127.0.0.1:5000/api/loginssword link on the login page.",
         category="Account",
         created_by=user1.id
     )

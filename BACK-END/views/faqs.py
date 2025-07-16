@@ -1,99 +1,79 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, FAQs
-from views.auth import token_required
 
-faqs_bp = Blueprint('faqs', __name__, url_prefix='/faqs')
+faqs_bp = Blueprint('faqs_bp', __name__, url_prefix='/api')
 
+# Serializer
+def serialize_faq(faq):
+    return {
+        'id': faq.id,
+        'question': faq.question,
+        'answer': faq.answer,
+        'created_by': faq.created_by,
+        'created_at': faq.created_at.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    }
 
-# Create FAQ (Admin only)
-@faqs_bp.route('/', methods=['POST'])
-@token_required
-def create_faq(current_user):
-    if not current_user.is_admin:
-        return jsonify({'message': 'Admin privileges required'}), 403
+# CREATE FAQ
+@faqs_bp.route('/faqs', methods=['POST'])
+@jwt_required()
+def create_faq():
+    data = request.get_json()
+    user_id = get_jwt_identity()
+
+    question = data.get('question')
+    answer = data.get('answer')
+
+    if not question or not answer:
+        return jsonify({'message': 'Both question and answer are required'}), 400
+
+    faq = FAQs(question=question, answer=answer, created_by=str(user_id))
+    db.session.add(faq)
+    db.session.commit()
+    return jsonify({'message': 'FAQ created successfully', 'faq': serialize_faq(faq)}), 201
+
+# READ all FAQs
+@faqs_bp.route('/faqs', methods=['GET'])
+def get_faqs():
+    faqs = FAQs.query.order_by(FAQs.created_at.desc()).all()
+    return jsonify([serialize_faq(f) for f in faqs]), 200
+
+# READ one FAQ
+@faqs_bp.route('/faqs/<int:id>', methods=['GET'])
+def get_faq(id):
+    faq = FAQs.query.get(id)
+    if not faq:
+        return jsonify({'message': 'FAQ not found'}), 404
+    return jsonify(serialize_faq(faq)), 200
+
+# UPDATE FAQ
+@faqs_bp.route('/faqs/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_faq(id):
+    faq = FAQs.query.get(id)
+    if not faq:
+        return jsonify({'message': 'FAQ not found'}), 404
 
     data = request.get_json()
     question = data.get('question')
     answer = data.get('answer')
-    category = data.get('category')
 
-    if not question or not answer or not category:
-        return jsonify({'error': 'All fields (question, answer, category) are required'}), 400
-
-    faq = FAQs(
-        question=question,
-        answer=answer,
-        category=category,
-        created_by=current_user.id
-    )
-    db.session.add(faq)
-    db.session.commit()
-
-    return jsonify({'message': 'FAQ created', 'id': faq.id}), 201
-
-
-# Get all FAQs
-@faqs_bp.route('/', methods=['GET'])
-def get_all_faqs():
-    faqs = FAQs.query.all()
-    return jsonify([
-        {
-            'id': faq.id,
-            'question': faq.question,
-            'answer': faq.answer,
-            'category': faq.category,
-            'created_at': faq.created_at
-        } for faq in faqs
-    ]), 200
-
-
-# Get FAQ by ID
-@faqs_bp.route('/<int:faq_id>', methods=['GET'])
-def get_faq_by_id(faq_id):
-    faq = FAQs.query.get(faq_id)
-    if not faq:
-        return jsonify({'message': 'FAQ not found'}), 404
-
-    return jsonify({
-        'id': faq.id,
-        'question': faq.question,
-        'answer': faq.answer,
-        'category': faq.category,
-        'created_at': faq.created_at
-    }), 200
-
-
-# Update FAQ (Admin only)
-@faqs_bp.route('/<int:faq_id>', methods=['PUT'])
-@token_required
-def update_faq(current_user, faq_id):
-    if not current_user.is_admin:
-        return jsonify({'message': 'Admin privileges required'}), 403
-
-    faq = FAQs.query.get(faq_id)
-    if not faq:
-        return jsonify({'message': 'FAQ not found'}), 404
-
-    data = request.get_json()
-    faq.question = data.get('question', faq.question)
-    faq.answer = data.get('answer', faq.answer)
-    faq.category = data.get('category', faq.category)
+    if question:
+        faq.question = question
+    if answer:
+        faq.answer = answer
 
     db.session.commit()
-    return jsonify({'message': 'FAQ updated'}), 200
+    return jsonify({'message': 'FAQ updated successfully', 'faq': serialize_faq(faq)}), 200
 
-
-# Delete FAQ (Admin only)
-@faqs_bp.route('/<int:faq_id>', methods=['DELETE'])
-@token_required
-def delete_faq(current_user, faq_id):
-    if not current_user.is_admin:
-        return jsonify({'message': 'Admin privileges required'}), 403
-
-    faq = FAQs.query.get(faq_id)
+# DELETE FAQ
+@faqs_bp.route('/faqs/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_faq(id):
+    faq = FAQs.query.get(id)
     if not faq:
         return jsonify({'message': 'FAQ not found'}), 404
 
     db.session.delete(faq)
     db.session.commit()
-    return jsonify({'message': 'FAQ deleted'}), 200
+    return jsonify({'message': 'FAQ deleted successfully'}), 200

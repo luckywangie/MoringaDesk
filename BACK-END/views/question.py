@@ -1,131 +1,137 @@
-from models import db, Question
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from models import db, Question, User, Category
+from .auth import token_required
 from datetime import datetime
 
-question_bp = Blueprint('questions', __name__)
+question_bp = Blueprint('question', __name__, url_prefix='/api/questions')
 
-# Get all questions with filters and pagination
-@question_bp.route('/api/questions', methods=['GET'])
-def get_questions():
-    page = request.args.get('page', 1, type=int)
-    per_page = min(request.args.get('per_page', 10, type=int), 100)
-    stage = request.args.get('stage')
-    language = request.args.get('language')
-    search = request.args.get('search')
-
-    query = Question.query
-    if stage:
-        query = query.filter(Question.stage == stage)
-    if language:
-        query = query.filter(Question.language == language)
-    if search:
-        query = query.filter(
-            Question.title.ilike(f"%{search}%") | 
-            Question.description.ilike(f"%{search}%")
-        )
-
-    questions = query.order_by(Question.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
-
-    return jsonify({
-        'questions': [{
-            'id': q.id,
-            'title': q.title,
-            'description': q.description,
-            'author': q.user.username if q.user else 'Unknown',
-            'stage': q.stage,
-            'language': q.language,
-            'is_solved': q.is_solved,
-            'answer_count': len(q.answers),
-            'created_at': q.created_at.isoformat()
-        } for q in questions.items],
-        'total': questions.total,
-        'pages': questions.pages,
-        'current_page': page
-    }), 200
-
-# Create a new question
-@question_bp.route('/api/questions', methods=['POST'])
-@jwt_required()
-def create_question():
-    user_id = get_jwt_identity()
+# -------------------- Create Question --------------------
+@question_bp.route('', methods=['POST'])
+@token_required
+def create_question(current_user):
     data = request.get_json()
-    if not data or not data.get('title') or not data.get('description'):
-        return jsonify({"error": "Title and description are required"}), 400
+    title = data.get('title')
+    description = data.get('description')
+    category_id = data.get('category_id')
+    language = data.get('language')  # <-- Get language
 
-    question = Question(
-        title=data['title'],
-        description=data['description'],
-        user_id=user_id,
-        stage=data.get('stage'),
-        language=data.get('language')
+    if not title or not description:
+        return jsonify({'message': 'Title and description are required'}), 400
+
+    if not category_id:
+        return jsonify({'message': 'Category ID is required'}), 400
+
+    if not language:
+        return jsonify({'message': 'Language is required'}), 400  # <-- Validate language
+
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({'message': 'Invalid category ID'}), 400
+
+    new_question = Question(
+        title=title,
+        description=description,
+        user_id=current_user.id,
+        category_id=category_id,
+        language=language,  # <-- Add language to model
+        created_at=datetime.utcnow()
     )
-    db.session.add(question)
+
+    db.session.add(new_question)
     db.session.commit()
 
     return jsonify({
-        'id': question.id,
-        'title': question.title,
-        'description': question.description,
-        'author': question.user.username if question.user else 'Unknown',
-        'stage': question.stage,
-        'language': question.language,
-        'is_solved': question.is_solved,
-        'created_at': question.created_at.isoformat()
+        'message': 'Question created successfully',
+        'question': {
+            'id': new_question.id,
+            'title': new_question.title,
+            'description': new_question.description,
+            'user_id': new_question.user_id,
+            'category_id': new_question.category_id,
+            'language': new_question.language,
+            'created_at': new_question.created_at
+        }
     }), 201
 
-# Get question by ID
-@question_bp.route('/api/questions/<int:question_id>', methods=['GET'])
-def get_question_by_id(question_id):
-    question = Question.query.get_or_404(question_id)
+# -------------------- Get All Questions --------------------
+@question_bp.route('', methods=['GET'])
+def get_questions():
+    questions = Question.query.all()
+    result = []
+    for q in questions:
+        result.append({
+            'id': q.id,
+            'title': q.title,
+            'description': q.description,
+            'user_id': q.user_id,
+            'category_id': q.category_id,
+            'language': q.language,
+            'created_at': q.created_at
+        })
+
+    return jsonify(result), 200
+
+# -------------------- Get One Question --------------------
+@question_bp.route('/<int:question_id>', methods=['GET'])
+def get_question(question_id):
+    question = Question.query.get(question_id)
+    if not question:
+        return jsonify({'message': 'Question not found'}), 404
 
     return jsonify({
         'id': question.id,
         'title': question.title,
         'description': question.description,
-        'author': question.user.username if question.user else 'Unknown',
-        'stage': question.stage,
+        'user_id': question.user_id,
+        'category_id': question.category_id,
         'language': question.language,
-        'is_solved': question.is_solved,
-        'created_at': question.created_at.isoformat(),
-        'answers': [{
-            'id': a.id,
-            'content': a.content[:100] + '...' if len(a.content) > 150 else a.content,
-            'author': a.user.username if a.user else 'Unknown',
-            'created_at': a.created_at.isoformat()
-        } for a in question.answers]
+        'created_at': question.created_at
     }), 200
 
-# Update question
-@question_bp.route('/api/questions/<int:question_id>', methods=['PUT'])
-@jwt_required()
-def update_question(question_id):
-    user_id = get_jwt_identity()
-    question = Question.query.get_or_404(question_id)
+# -------------------- Update Question --------------------
+@question_bp.route('/<int:question_id>', methods=['PUT'])
+@token_required
+def update_question(current_user, question_id):
+    question = Question.query.get(question_id)
+    if not question:
+        return jsonify({'message': 'Question not found'}), 404
 
-    if question.user_id != user_id:
-        return jsonify({"error": "Unauthorized"}), 403
+    if question.user_id != current_user.id and not current_user.is_admin:
+        return jsonify({'message': 'Unauthorized to update this question'}), 403
 
     data = request.get_json()
     question.title = data.get('title', question.title)
     question.description = data.get('description', question.description)
-    question.stage = data.get('stage', question.stage)
-    question.language = data.get('language', question.language)
-    question.updated_at = datetime.utcnow()
+    question.category_id = data.get('category_id', question.category_id)
+    question.language = data.get('language', question.language)  # <-- update language
 
     db.session.commit()
-    return jsonify({'success': "Question updated successfully"}), 200
 
-# Delete question
-@question_bp.route('/api/questions/<int:question_id>', methods=['DELETE'])
-@jwt_required()
-def delete_question(question_id):
-    user_id = get_jwt_identity()
-    question = Question.query.get_or_404(question_id)
+    return jsonify({
+        'message': 'Question updated successfully',
+        'question': {
+            'id': question.id,
+            'title': question.title,
+            'description': question.description,
+            'user_id': question.user_id,
+            'category_id': question.category_id,
+            'language': question.language,
+            'created_at': question.created_at
+        }
+    }), 200
 
-    if question.user_id != user_id:
-        return jsonify({"error": "Unauthorized"}), 403
+# -------------------- Delete Question --------------------
+@question_bp.route('/<int:question_id>', methods=['DELETE'])
+@token_required
+def delete_question(current_user, question_id):
+    question = Question.query.get(question_id)
+    if not question:
+        return jsonify({'message': 'Question not found'}), 404
+
+    if question.user_id != current_user.id and not current_user.is_admin:
+        return jsonify({'message': 'Unauthorized to delete this question'}), 403
 
     db.session.delete(question)
     db.session.commit()
-    return jsonify({"success": "Question deleted successfully"}), 200
+
+    return jsonify({'message': f'Question {question.title} deleted successfully'}), 200

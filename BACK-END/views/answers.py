@@ -1,98 +1,91 @@
-from models import db, Answers, Question
-from flask import jsonify, request, Blueprint
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
+from models import db, Answers, Question
 
-answers_bp = Blueprint('answers', __name__)
+answers_bp = Blueprint('answers_bp', __name__, url_prefix='/api')
 
-# Create answer
-@answers_bp.route('/api/questions/<int:question_id>/answers', methods=['POST'])
-@jwt_required()
-def create_answer(question_id):
-    user_id = get_jwt_identity()
-    data = request.get_json()
-
-    if not data or 'content' not in data:
-        return jsonify({'error': 'Content is required'}), 400
-
-    Question.query.get_or_404(question_id)
-    answer = Answers(
-        content=data['content'],
-        question_id=question_id,
-        user_id=user_id
-    )
-    db.session.add(answer)
-    db.session.commit()
-
-    return jsonify({'success': 'Answer created successfully', 'answer_id': answer.id}), 201
-
-
-# Get answer by ID
-@answers_bp.route('/api/answers/<int:answer_id>', methods=['GET'])
-@jwt_required()
-def get_answer(answer_id):
-    answer = Answers.query.get_or_404(answer_id)
-    return jsonify({
+# Helper to serialize Answer
+def serialize_answer(answer):
+    return {
         'id': answer.id,
         'content': answer.content,
-        'author': {
-            'id': answer.user.id,
-            'name': answer.user.username,
-        },
-        'question': {
-            'id': answer.question.id,
-            'title': answer.question.title
-        },
-        'is_approved': answer.is_approved,
-        'votes': answer.votes,
-        'created_at': answer.created_at.isoformat()
-    }), 200
+        'question_id': answer.question_id,
+        'user_id': answer.user_id,
+        'created_at': answer.created_at.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    }
 
+# CREATE Answer
+@answers_bp.route('/questions/<int:question_id>/answers', methods=['POST'])
+@jwt_required()
+def create_answer(question_id):
+    data = request.get_json()
+    user_id = get_jwt_identity()
 
-# Update answer
-@answers_bp.route('/api/answers/<int:answer_id>', methods=['PUT'])
+    question = Question.query.get(question_id)
+    if not question:
+        return jsonify({'message': 'Question not found'}), 404
+
+    content = data.get('content')
+    if not content:
+        return jsonify({'message': 'Answer content is required'}), 400
+
+    new_answer = Answers(content=content, question_id=question_id, user_id=user_id)
+    db.session.add(new_answer)
+    db.session.commit()
+
+    return jsonify({'message': 'Answer created successfully', 'answer': serialize_answer(new_answer)}), 201
+
+# READ: Get all answers for a question
+@answers_bp.route('/questions/<int:question_id>/answers', methods=['GET'])
+def get_answers_for_question(question_id):
+    question = Question.query.get(question_id)
+    if not question:
+        return jsonify({'message': 'Question not found'}), 404
+
+    answers = Answers.query.filter_by(question_id=question_id).all()
+    return jsonify([serialize_answer(answer) for answer in answers]), 200
+
+# READ: Get answer by ID
+@answers_bp.route('/answers/<int:answer_id>', methods=['GET'])
+def get_answer_by_id(answer_id):
+    answer = Answers.query.get(answer_id)
+    if not answer:
+        return jsonify({'message': 'Answer not found'}), 404
+    return jsonify(serialize_answer(answer)), 200
+
+# UPDATE: Update an answer
+@answers_bp.route('/answers/<int:answer_id>', methods=['PUT'])
 @jwt_required()
 def update_answer(answer_id):
+    data = request.get_json()
     user_id = get_jwt_identity()
-    answer = Answers.query.get_or_404(answer_id)
+
+    answer = Answers.query.get(answer_id)
+    if not answer:
+        return jsonify({'message': 'Answer not found'}), 404
 
     if answer.user_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
+        return jsonify({'message': 'Unauthorized to update this answer'}), 403
 
-    data = request.get_json()
-    if 'content' in data:
-        answer.content = data['content']
-    if 'is_approved' in data:
-        answer.is_approved = data['is_approved']
-    
-    answer.updated_at = datetime.utcnow()
-    db.session.commit()
+    content = data.get('content')
+    if content:
+        answer.content = content
+        db.session.commit()
 
-    return jsonify({'success': 'Answer updated successfully', 'answer_id': answer.id}), 200
+    return jsonify({'message': 'Answer updated successfully', 'answer': serialize_answer(answer)}), 200
 
-
-# Vote on an answer
-@answers_bp.route('/api/answers/<int:answer_id>/vote', methods=['POST'])   
+# DELETE: Delete an answer
+@answers_bp.route('/answers/<int:answer_id>', methods=['DELETE'])
 @jwt_required()
-def vote_answer(answer_id):
+def delete_answer(answer_id):
     user_id = get_jwt_identity()
-    data = request.get_json()
-    vote_type = data.get('vote_type')
+    answer = Answers.query.get(answer_id)
+    if not answer:
+        return jsonify({'message': 'Answer not found'}), 404
 
-    if vote_type not in ['up', 'down']:
-        return jsonify({'error': 'Invalid vote type'}), 400
+    if answer.user_id != user_id:
+        return jsonify({'message': 'Unauthorized to delete this answer'}), 403
 
-    answer = Answers.query.get_or_404(answer_id)
-
-    # Placeholder logic — ideally prevent repeat votes per user
-    if vote_type == 'up':
-        answer.votes += 1
-    elif vote_type == 'down':
-        answer.votes = max(answer.votes - 1, 0)  # Optional: prevent negative votes
-
+    db.session.delete(answer)
     db.session.commit()
-
-    return jsonify({
-        'success': 'Vote recorded successfully',
-        'votes': answer.votes
-    }), 200
+    return jsonify({'message': 'Answer deleted successfully'}), 200
