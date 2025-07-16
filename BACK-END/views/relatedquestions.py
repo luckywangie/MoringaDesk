@@ -1,59 +1,73 @@
-from models import db, RelatedQuestions
-from flask import jsonify, request, Blueprint
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
-from sqlalchemy.exc import IntegrityError
+from models import db, RelatedQuestions, Question  # noqa: F401
 
-related_questions_bp = Blueprint('related_questions', __name__)
+related_questions_bp = Blueprint('related_questions_bp', __name__, url_prefix='/api')
 
-# Create a new related question association
-@related_questions_bp.route('/api/related-questions', methods=['POST'])
+# Serializer
+def serialize_related_question(rq):
+    return {
+        'id': rq.id,
+        'question_id': rq.question_id,
+        'related_question_id': rq.related_question_id
+    }
+
+# CREATE a related question
+@related_questions_bp.route('/relatedquestions', methods=['POST'])
 @jwt_required()
 def create_related_question():
     data = request.get_json()
+    question_id = data.get('question_id')
+    related_question_id = data.get('related_question_id')
 
-    if not data or 'question_id' not in data or 'related_question_id' not in data:
-        return jsonify({'error': 'Both question_id and related_question_id are required'}), 400
+    if not question_id or not related_question_id:
+        return jsonify({'message': 'Both question_id and related_question_id are required'}), 400
 
-    if data['question_id'] == data['related_question_id']:
-        return jsonify({'error': 'A question cannot be related to itself'}), 400
+    related = RelatedQuestions(question_id=question_id, related_question_id=related_question_id)
+    db.session.add(related)
+    db.session.commit()
 
-    # Prevent duplicate relation
-    existing = RelatedQuestions.query.filter_by(
-        question_id=data['question_id'], 
-        related_question_id=data['related_question_id']
-    ).first()
-    if existing:
-        return jsonify({'error': 'Relation already exists'}), 409
+    return jsonify({'message': 'Related question created', 'related_question': serialize_related_question(related)}), 201
 
-    try:
-        related_question = RelatedQuestions(
-            question_id=data['question_id'],
-            related_question_id=data['related_question_id']
-        )
-        db.session.add(related_question)
-        db.session.commit()
-        return jsonify({
-            'success': 'Related question created successfully', 
-            'id': related_question.id
-        }), 201
-    except IntegrityError:
-        db.session.rollback()
-        return jsonify({'error': 'Invalid question IDs'}), 400
+# GET all related questions
+@related_questions_bp.route('/relatedquestions', methods=['GET'])
+@jwt_required()
+def get_all_related_questions():
+    related_questions = RelatedQuestions.query.all()
+    return jsonify([serialize_related_question(rq) for rq in related_questions]), 200
 
-# Get related questions for a given question
-@related_questions_bp.route('/api/related-questions/<int:question_id>', methods=['GET'])
-def get_related_questions(question_id):
-    related = RelatedQuestions.query.filter_by(question_id=question_id).all()
-    return jsonify([
-        {'id': r.id, 'related_question_id': r.related_question_id}
-        for r in related
-    ]), 200
+# GET related question by ID
+@related_questions_bp.route('/relatedquestions/<int:id>', methods=['GET'])
+@jwt_required()
+def get_related_question(id):
+    rq = RelatedQuestions.query.get(id)
+    if not rq:
+        return jsonify({'message': 'Related question not found'}), 404
+    return jsonify(serialize_related_question(rq)), 200
 
-# Delete a specific related question association
-@related_questions_bp.route('/api/related-questions/<int:id>', methods=['DELETE'])
+# UPDATE related question
+@related_questions_bp.route('/relatedquestions/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_related_question(id):
+    rq = RelatedQuestions.query.get(id)
+    if not rq:
+        return jsonify({'message': 'Related question not found'}), 404
+
+    data = request.get_json()
+    rq.question_id = data.get('question_id', rq.question_id)
+    rq.related_question_id = data.get('related_question_id', rq.related_question_id)
+
+    db.session.commit()
+    return jsonify({'message': 'Related question updated', 'related_question': serialize_related_question(rq)}), 200
+
+# DELETE related question
+@related_questions_bp.route('/relatedquestions/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_related_question(id):
-    rq = RelatedQuestions.query.get_or_404(id)
+    rq = RelatedQuestions.query.get(id)
+    if not rq:
+        return jsonify({'message': 'Related question not found'}), 404
+
     db.session.delete(rq)
     db.session.commit()
-    return jsonify({'success': 'Related question deleted successfully'}), 200
+    return jsonify({'message': 'Related question deleted'}), 200

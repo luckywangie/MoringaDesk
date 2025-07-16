@@ -17,6 +17,8 @@ from views.reports import reports_bp
 from views.tags import tags_bp
 from views.relatedquestions import related_questions_bp
 from views.category import categories_bp
+from views.questiontags import questiontags_bp
+
 
 from views.faqs import faqs_bp
 from views import user_bp  # ✅ Added for user management
@@ -57,6 +59,8 @@ def create_app():
     app.register_blueprint(categories_bp)
     app.register_blueprint(faqs_bp)
     app.register_blueprint(user_bp)
+    app.register_blueprint(questiontags_bp)
+
 
     @app.route('/')
     def home():
