@@ -1,6 +1,7 @@
 from models import db, Question
 from flask import Flask, jsonify, request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
+question_bp = Blueprint('questions', __name__)
 @question_bp.route('/api/questions', methods=['GET'])
 def get_questions():
     page = request.args.get('page', 1, type=int)
