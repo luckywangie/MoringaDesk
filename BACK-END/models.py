@@ -22,7 +22,6 @@ class User(db.Model):
     follow_up = db.relationship('FollowUp', backref='user', cascade='all, delete-orphan')
     reports = db.relationship('Reports', backref='user', cascade='all, delete-orphan')
     faqs = db.relationship('FAQs', backref='user', cascade='all, delete-orphan')
-    # Look into it
     tags = db.relationship('Tags', backref='user', cascade='all, delete-orphan')
 
 
@@ -52,11 +51,6 @@ class Answers(db.Model):
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     is_approved = db.Column(db.Boolean, default=False)
-    
-    # Relationships
-    # look in to it
-    questions = db.relationship('Question', backref='answers', lazy=True)
-    user = db.relationship('User', backref='answers', lazy=True)
 
 
 class FollowUp(db.Model):
@@ -127,8 +121,3 @@ class FAQs(db.Model):
     category = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-    # Relationships
-    user = db.relationship('User', backref='faqs', lazy=True)
-
-
