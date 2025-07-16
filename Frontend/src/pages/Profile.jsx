@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const Profile = () => {
   const { user, logout_user, update_user_profile, delete_profile } = useContext(UserContext);
   const navigate = useNavigate();
+
   const [profileImage, setProfileImage] = useState(
     localStorage.getItem(`profileImage_${user?.email}`) ||
     'https://www.shutterstock.com/image-vector/user-profile-icon-vector-avatar-600nw-2247726673.jpg'
@@ -49,7 +50,14 @@ const Profile = () => {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     const success = await update_user_profile(user.id, { username, email });
-    if (success) setEditMode(false);
+    if (success) {
+      setEditMode(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    await delete_profile();
+    navigate('/signup');
   };
 
   if (!user) {
@@ -139,6 +147,7 @@ const Profile = () => {
                     className="w-full border border-gray-300 rounded px-3 py-2"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="mb-4">
@@ -148,6 +157,7 @@ const Profile = () => {
                     className="w-full border border-gray-300 rounded px-3 py-2"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="flex space-x-4">
@@ -166,7 +176,7 @@ const Profile = () => {
               <h4 className="text-lg text-red-700 font-semibold mb-3">Danger Zone</h4>
               <p className="text-sm text-gray-600 mb-3">Deleting your account will remove all your data permanently.</p>
               <button
-                onClick={delete_profile}
+                onClick={handleDelete}
                 className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
               >
                 Delete My Account

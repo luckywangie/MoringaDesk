@@ -3,6 +3,7 @@ import { UserContext } from '../context/UserContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -30,8 +31,35 @@ const Login = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleGoogleLogin = () => {
-    toast.info("Google Login coming soon!");
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credentialResponse.credential }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Google login failed');
+        return;
+      }
+
+      // Store user and token (you can also update UserContext to include this)
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.token);
+
+      toast.success('Logged in with Google!');
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Google login error:', error);
+      toast.error('Google login failed');
+    }
+  };
+
+  const handleGoogleFailure = () => {
+    toast.error('Google login failed');
   };
 
   return (
@@ -47,7 +75,7 @@ const Login = () => {
           <h2 className="text-xl font-bold text-green-700">MoringaDesk</h2>
         </div>
 
-        <h3 className="text-lg font-semibold text-center text-gray-700 mb-6">Welcome Back </h3>
+        <h3 className="text-lg font-semibold text-center text-gray-700 mb-6">Welcome Back</h3>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="relative">
@@ -108,18 +136,9 @@ const Login = () => {
             Login
           </button>
 
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 border border-gray-400 text-black py-2 rounded-lg hover:bg-gray-100 transition"
-          >
-            <img
-              src="https://i.postimg.cc/pdDzbTz4/newlogo.png"
-              alt="Google"
-              className="w-5 h-5"
-            />
-            Log in with Google
-          </button>
+          <div className="mt-3">
+            <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleFailure} />
+          </div>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-5">
