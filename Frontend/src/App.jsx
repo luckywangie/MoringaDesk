@@ -12,6 +12,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import Home from './pages/Home';
 import About from './pages/About';
+import CategoryManager from './pages/CategoryManager';
 import AskQuestion from './pages/AskQuestion';
 import Dashboard from './pages/Dashboard';
 import FAQs from './pages/FAQs';
@@ -22,35 +23,39 @@ import Profile from './pages/Profile';
 import QuestionAnswer from './pages/QuestionAnswer';
 import Questions from './pages/Questions';
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
 function App() {
   return (
-    <UserProvider>
-      <AdminProvider>
-        <Router>
-          {/* ✅ Removed global background classes from the wrapper */}
-          <div className="min-h-screen flex flex-col text-gray-800 dark:text-white transition-colors duration-300">
-            <Navbar />
-            <main className="flex-grow">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/ask-question" element={<AskQuestion />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/faqs" element={<FAQs />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/question-answer" element={<QuestionAnswer />} />
-                <Route path="/questions" element={<Questions />} />
-              </Routes>
-            </main>
-            <Footer />
-            <ToastContainer position="top-right" autoClose={3000} />
-          </div>
-        </Router>
-      </AdminProvider>
-    </UserProvider>
+    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+      <UserProvider>
+        <AdminProvider>
+          <Router>
+            <div className="min-h-screen flex flex-col text-gray-800 dark:text-white transition-colors duration-300">
+              <Navbar />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/ask-question" element={<AskQuestion />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/faqs" element={<FAQs />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/question-answer" element={<QuestionAnswer />} />
+                  <Route path="/questions" element={<Questions />} />
+                  <Route path="/category-manager" element={<CategoryManager />} />
+                </Routes>
+              </main>
+              <Footer />
+              <ToastContainer position="top-right" autoClose={3000} />
+            </div>
+          </Router>
+        </AdminProvider>
+      </UserProvider>
+    </GoogleOAuthProvider>
   );
 }
 

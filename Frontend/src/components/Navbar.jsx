@@ -1,23 +1,26 @@
 import React, { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 
 function Navbar() {
   const { user, logout_user } = useContext(UserContext);
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout_user();
     setMenuOpen(false);
+    navigate('/login');
   };
 
   const linkClasses =
     "px-3 py-1 border border-gray-300 rounded-md hover:border-green-600 hover:bg-green-100 transition text-sm md:text-base";
 
+  const isAdmin = user?.is_admin === true;
+
   return (
     <nav className="bg-white border-b border-gray-200 shadow-sm px-4 py-3">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Logo and Name */}
         <Link to="/" className="flex flex-col items-center space-y-1">
           <img
             src="https://i.postimg.cc/NfNCngcQ/moringa-logo.png"
@@ -27,20 +30,27 @@ function Navbar() {
           <span className="text-green-700 font-semibold text-sm">MoringaDesk</span>
         </Link>
 
-        {/* Desktop Links */}
         <div className="hidden md:flex flex-wrap gap-2 text-gray-700 items-center">
-          <Link to="/" className={linkClasses}>Home</Link>
-          <Link to="/about" className={linkClasses}>About</Link>
+          {!isAdmin && (
+            <>
+              <Link to="/" className={linkClasses}>Home</Link>
+              <Link to="/about" className={linkClasses}>About</Link>
+              <Link to="/ask-question" className={linkClasses}>Ask Question</Link>
+            </>
+          )}
+
           <Link to="/faqs" className={linkClasses}>FAQs</Link>
 
           {user && (
             <>
-              <Link to="/ask-question" className={linkClasses}>Ask Question</Link>
               <Link to="/dashboard" className={linkClasses}>Dashboard</Link>
               <Link to="/questions" className={linkClasses}>Questions</Link>
               <Link to="/question-answer" className={linkClasses}>Q&A</Link>
               <Link to="/notifications" className={linkClasses}>Notifications</Link>
               <Link to="/profile" className={linkClasses}>Profile</Link>
+              {isAdmin && (
+                <Link to="/category-manager" className={linkClasses}>Category Manager</Link>
+              )}
             </>
           )}
 
@@ -82,18 +92,28 @@ function Navbar() {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden mt-3 px-4 space-y-2 text-gray-700">
-          <Link to="/" onClick={() => setMenuOpen(false)} className={linkClasses}>Home</Link>
-          <Link to="/about" onClick={() => setMenuOpen(false)} className={linkClasses}>About</Link>
+          {!isAdmin && (
+            <>
+              <Link to="/" onClick={() => setMenuOpen(false)} className={linkClasses}>Home</Link>
+              <Link to="/about" onClick={() => setMenuOpen(false)} className={linkClasses}>About</Link>
+              <Link to="/ask-question" onClick={() => setMenuOpen(false)} className={linkClasses}>Ask Question</Link>
+            </>
+          )}
+
           <Link to="/faqs" onClick={() => setMenuOpen(false)} className={linkClasses}>FAQs</Link>
 
           {user && (
             <>
-              <Link to="/ask-question" onClick={() => setMenuOpen(false)} className={linkClasses}>Ask Question</Link>
               <Link to="/dashboard" onClick={() => setMenuOpen(false)} className={linkClasses}>Dashboard</Link>
               <Link to="/questions" onClick={() => setMenuOpen(false)} className={linkClasses}>Questions</Link>
               <Link to="/question-answer" onClick={() => setMenuOpen(false)} className={linkClasses}>Q&A</Link>
               <Link to="/notifications" onClick={() => setMenuOpen(false)} className={linkClasses}>Notifications</Link>
               <Link to="/profile" onClick={() => setMenuOpen(false)} className={linkClasses}>Profile</Link>
+              {isAdmin && (
+                <Link to="/category-manager" onClick={() => setMenuOpen(false)} className={linkClasses}>
+                  Category Manager
+                </Link>
+              )}
             </>
           )}
 

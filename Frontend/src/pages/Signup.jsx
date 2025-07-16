@@ -2,9 +2,10 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { UserContext } from '../context/UserContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Signup = () => {
-  const { login_user } = useContext(UserContext);
+  const { login_user, google_login_user } = useContext(UserContext);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -21,7 +22,7 @@ const Signup = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { name, email, password, confirm } = formData;
 
@@ -36,12 +37,20 @@ const Signup = () => {
     }
 
     toast.success('Signup successful!');
-    login_user(email, password);
+    await login_user(email, password);
     navigate('/dashboard');
   };
 
-  const handleGoogleSignup = () => {
-    toast.info("Google Signup coming soon!");
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const token = credentialResponse.credential;
+    const success = await google_login_user(token);
+    if (success) {
+      navigate('/dashboard');
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Google signup failed');
   };
 
   return (
@@ -52,7 +61,7 @@ const Signup = () => {
           <img
             src="https://i.postimg.cc/NfNCngcQ/moringa-logo.png"
             alt="Moringa Logo"
-            className="w-35 h-35 rounded-full border border-green-600 shadow"
+            className="w-24 h-24 rounded-full border border-green-600 shadow"
           />
           <h2 className="text-xl font-bold text-green-700">MoringaDesk</h2>
         </div>
@@ -114,20 +123,11 @@ const Signup = () => {
           >
             Sign Up
           </button>
-
-          <button
-            type="button"
-            onClick={handleGoogleSignup}
-            className="w-full flex items-center justify-center gap-3 border border-gray-400 text-black py-2 rounded-lg hover:bg-gray-100 transition"
-          >
-            <img
-              src="https://i.postimg.cc/pdDzbTz4/newlogo.png"
-              alt="Google"
-              className="w-5 h-5"
-            />
-            Sign up with Google
-          </button>
         </form>
+
+        <div className="mt-4">
+          <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+        </div>
 
         <p className="mt-4 text-sm text-center text-gray-600">
           Already have an account?{' '}
