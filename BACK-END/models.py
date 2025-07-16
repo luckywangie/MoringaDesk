@@ -22,6 +22,7 @@ class User(db.Model):
     follow_up = db.relationship('FollowUp', backref='user', cascade='all, delete-orphan')
     reports = db.relationship('Reports', backref='user', cascade='all, delete-orphan')
     faqs = db.relationship('FAQs', backref='user', cascade='all, delete-orphan')
+    # Look into it
     tags = db.relationship('Tags', backref='user', cascade='all, delete-orphan')
 
 
@@ -53,6 +54,7 @@ class Answers(db.Model):
     is_approved = db.Column(db.Boolean, default=False)
     
     # Relationships
+    # look in to it
     questions = db.relationship('Question', backref='answers', lazy=True)
     user = db.relationship('User', backref='answers', lazy=True)
 
