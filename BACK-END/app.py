@@ -1,34 +1,53 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy  # noqa: F401
+from flask_migrate import Migrate  # noqa: F401
 from flask_cors import CORS
-from models import db  
-from views.auth import auth_bp
+from models import db
 
-# Factory function for the Flask application
+# Import all your blueprints
+from views.auth import auth_bp
+from views.question import question_bp
+from views.answers import answers_bp
+from views.votes import votes_bp
+from views.followup import follow_up_bp
+from views.notifications import notification_bp
+from views.reports import report_bp
+from views.tags import tag_bp
+from views.relatedquestions import related_questions_bp
+from views.category import category_bp
+from views.faqs import faq_bp
+
 def create_app():
     app = Flask(__name__)
-    CORS(app)  # Allow cross-origin requests from frontend
+    CORS(app)
 
     # Configurations
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'  # Change to PostgreSQL/MySQL URI in production
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'  # Replace with PostgreSQL URI in production
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Initialize database and migrations
     db.init_app(app)
-    migrate = Migrate(app, db)
 
-    # Register the auth blueprint
+    # Register all blueprints
     app.register_blueprint(auth_bp)
+    app.register_blueprint(question_bp)
+    app.register_blueprint(answers_bp)
+    app.register_blueprint(votes_bp)
+    app.register_blueprint(follow_up_bp)
+    app.register_blueprint(notification_bp)
+    app.register_blueprint(report_bp)
+    app.register_blueprint(tag_bp)
+    app.register_blueprint(related_questions_bp)
+    app.register_blueprint(category_bp)
+    app.register_blueprint(faq_bp)
 
     # Example root route
     @app.route('/')
     def home():
-        return "Flask App with SQLAlchemy and Google Auth is running!"
+        return "MoringaDesk Flask API is running!"
 
     return app
 
-# Allow running the app directly with `python app.py`
 if __name__ == '__main__':
     app = create_app()
     app.run(debug=True)
