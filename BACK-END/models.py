@@ -63,8 +63,9 @@ class FollowUp(db.Model):
 class Votes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    solution_id = db.Column(db.Integer, db.ForeignKey('answers.id'))
-
+    answer_id = db.Column(db.Integer, db.ForeignKey('answers.id'))
+    vote_type = db.Column(db.String(10))  # 'up' or 'down'
+    __table_args__ = (db.UniqueConstraint('user_id', 'answer_id', name='unique_user_answer_vote'),)
 
 class RelatedQuestions(db.Model):
     id = db.Column(db.Integer, primary_key=True)

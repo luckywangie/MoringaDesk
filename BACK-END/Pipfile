@@ -7,10 +7,11 @@ name = "pypi"
 sqlalchemy = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
-flask = "*"
 flask-cors = "*"
 google-auth = "*"
 jsonify = "*"
+flask = "*"
+migrate = "*"
 
 [dev-packages]
 

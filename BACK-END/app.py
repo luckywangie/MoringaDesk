@@ -27,6 +27,7 @@ def create_app():
 
     # Initialize database and migrations
     db.init_app(app)
+    Migrate(app, db)
 
     # Register all blueprints
     app.register_blueprint(auth_bp)
