@@ -1,10 +1,11 @@
-// src/pages/Profile.jsx
 import React, { useContext, useEffect, useState } from 'react';
 import { UserContext } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import { toast } from 'react-toastify';
 
 const Profile = () => {
-  const { user, logout_user, update_user_profile, delete_profile } = useContext(UserContext);
+  const { user, logout, updateProfile, deleteProfile } = useContext(UserContext);
   const navigate = useNavigate();
 
   const [profileImage, setProfileImage] = useState(
@@ -12,7 +13,6 @@ const Profile = () => {
     'https://www.shutterstock.com/image-vector/user-profile-icon-vector-avatar-600nw-2247726673.jpg'
   );
 
-  const [showDetails, setShowDetails] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
@@ -34,9 +34,21 @@ const Profile = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleLogout = () => {
-    logout_user();
-    navigate('/login');
+  const handleLogout = async () => {
+    const confirmed = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'You will be logged out.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: 'Yes, log me out'
+    });
+
+    if (confirmed.isConfirmed) {
+      logout();
+      toast.success("Logged out successfully");
+    }
   };
 
   const handleNotificationPermission = () => {
@@ -49,23 +61,46 @@ const Profile = () => {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    const success = await update_user_profile(user.id, { username, email });
-    if (success) {
+    const res = await updateProfile(user.id, { username, email });
+    if (res.success) {
       setEditMode(false);
+      toast.success('Profile updated!');
+    } else {
+      toast.error(res.message || 'Update failed.');
     }
   };
 
   const handleDelete = async () => {
-    await delete_profile();
-    navigate('/signup');
+    const confirmed = await Swal.fire({
+      title: 'Delete Account?',
+      text: 'This action is permanent and cannot be undone!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#888',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (confirmed.isConfirmed) {
+      const res = await deleteProfile(user.id);
+      if (res.success) {
+        toast.success('Account deleted!');
+        navigate('/register');
+      } else {
+        toast.error(res.message || 'Failed to delete account.');
+      }
+    }
   };
 
   if (!user) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">Please log in to view your profile.</h2>
-          <button onClick={() => navigate('/login')} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        <div className="bg-white p-8 rounded-lg shadow-lg text-center border-2 border-green-500">
+          <h2 className="text-xl font-semibold text-black mb-4">Please log in to view your profile.</h2>
+          <button 
+            onClick={() => navigate('/login')} 
+            className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-lg font-medium"
+          >
             Go to Login
           </button>
         </div>
@@ -75,115 +110,113 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row">
-        {/* Sidebar */}
-        <div className="md:w-1/3 p-6 flex flex-col items-center border-r border-gray-200">
+      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden flex flex-col md:flex-row border-2 border-green-500">
+        {/* Left Sidebar */}
+        <div className="md:w-1/3 p-6 flex flex-col items-center border-r-2 border-pink-300 bg-gradient-to-b from-white to-pink-50">
           <img
             src={profileImage}
             alt="Profile"
-            className="w-32 h-32 object-cover rounded-full border-4 border-gray-200"
+            className="w-32 h-32 object-cover rounded-full border-4 border-green-400 shadow-md"
           />
           <input
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            className="mt-3 text-sm"
+            className="mt-3 text-sm text-black file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-green-400 file:text-black hover:file:bg-green-500"
           />
-          <h2 className="mt-4 text-xl font-bold text-gray-800">{user.username || 'Moringa User'}</h2>
-          <p className="text-sm text-gray-500">{user.email}</p>
-          <span className={`mt-3 text-xs px-3 py-1 rounded-full font-medium ${user.is_admin ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
+          <h2 className="mt-4 text-xl font-bold text-black">{user.username || 'Moringa User'}</h2>
+          <p className="text-sm text-black">{user.email}</p>
+          <span className={`mt-3 text-xs px-3 py-1 rounded-full font-medium ${user.is_admin ? 'bg-pink-300' : 'bg-green-300'} text-black`}>
             {user.is_admin ? 'Administrator' : 'Standard User'}
           </span>
           <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="mt-4 text-sm text-green-700 underline hover:text-green-900"
-          >
-            Profile Settings
-          </button>
-          <button
             onClick={handleLogout}
-            className="mt-4 text-sm text-gray-500 hover:text-gray-700"
+            className="mt-6 text-sm text-black hover:text-gray-800 hover:bg-pink-200 px-4 py-2 rounded-lg w-full max-w-xs"
           >
             Logout
           </button>
         </div>
 
-        {/* Details Panel */}
-        {showDetails && (
-          <div className="md:w-2/3 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-700">Account Details</h3>
-              <button
-                onClick={handleNotificationPermission}
-                className="bg-gray-200 text-sm px-3 py-1 rounded-full text-gray-700 hover:bg-gray-300"
-              >
-                🔔 {notificationsEnabled ? 'Notifications Enabled' : 'Enable Notifications'}
-              </button>
-            </div>
-
-            {!editMode ? (
-              <>
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600">Username</label>
-                  <div className="p-3 border border-gray-200 rounded bg-gray-50">{user.username}</div>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600">Email</label>
-                  <div className="p-3 border border-gray-200 rounded bg-gray-50">{user.email}</div>
-                </div>
-                <button
-                  onClick={() => setEditMode(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                >
-                  Edit Profile
-                </button>
-              </>
-            ) : (
-              <form onSubmit={handleUpdateProfile}>
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600">Username</label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600">Email</label>
-                  <input
-                    type="email"
-                    className="w-full border border-gray-300 rounded px-3 py-2"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex space-x-4">
-                  <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                    Save Changes
-                  </button>
-                  <button onClick={() => setEditMode(false)} type="button" className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Danger Zone */}
-            <div className="mt-10 border-t pt-6">
-              <h4 className="text-lg text-red-700 font-semibold mb-3">Danger Zone</h4>
-              <p className="text-sm text-gray-600 mb-3">Deleting your account will remove all your data permanently.</p>
-              <button
-                onClick={handleDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-              >
-                Delete My Account
-              </button>
-            </div>
+        {/* Right Section */}
+        <div className="md:w-2/3 p-6 bg-gradient-to-b from-white to-green-50">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-black">Profile Settings</h3>
+            <button
+              onClick={handleNotificationPermission}
+              className={`text-sm px-3 py-1 rounded-full text-black ${notificationsEnabled ? 'bg-green-300' : 'bg-pink-300'} hover:opacity-90`}
+            >
+              🔔 {notificationsEnabled ? 'Notifications Enabled' : 'Enable Notifications'}
+            </button>
           </div>
-        )}
+
+          {!editMode ? (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-black">Username</label>
+                <div className="p-3 border-2 border-green-300 rounded-lg bg-white text-black mt-1">{user.username}</div>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-black">Email</label>
+                <div className="p-3 border-2 border-green-300 rounded-lg bg-white text-black mt-1">{user.email}</div>
+              </div>
+              <button
+                onClick={() => setEditMode(true)}
+                className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Edit Profile
+              </button>
+            </>
+          ) : (
+            <form onSubmit={handleUpdateProfile}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-black">Username</label>
+                <input
+                  type="text"
+                  className="w-full border-2 border-green-300 rounded-lg px-3 py-2 text-black mt-1 focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-black">Email</label>
+                <input
+                  type="email"
+                  className="w-full border-2 border-green-300 rounded-lg px-3 py-2 text-black mt-1 focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex space-x-4">
+                <button 
+                  type="submit" 
+                  className="bg-green-500 hover:bg-green-600 text-black px-4 py-2 rounded-lg font-medium"
+                >
+                  Save Changes
+                </button>
+                <button 
+                  onClick={() => setEditMode(false)} 
+                  type="button" 
+                  className="bg-pink-300 hover:bg-pink-400 text-black px-4 py-2 rounded-lg font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="mt-10 border-t-2 border-red-300 pt-6">
+            <h4 className="text-lg font-bold text-black mb-3">Danger Zone</h4>
+            <p className="text-sm text-black mb-3">Deleting your account will remove all your data permanently.</p>
+            <button
+              onClick={handleDelete}
+              className="bg-red-400 hover:bg-red-500 text-black px-4 py-2 rounded-lg font-medium"
+            >
+              Delete My Account
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

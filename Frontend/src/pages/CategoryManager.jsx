@@ -1,18 +1,18 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { UserContext } from '../context/UserContext';
-import { AdminContext } from '../context/AdminContext';
+import React, { useEffect, useState } from 'react';
+import { useUser } from '../context/UserContext';
+import { useAdmin } from '../context/AdminContext';
 import { toast } from 'react-toastify';
 
 const CategoryManager = () => {
-  const { token } = useContext(UserContext);
-  const { isAdmin } = useContext(AdminContext);
+  const { token } = useUser();         // ✅ Access token from user context
+  const { isAdmin } = useAdmin();      // ✅ Access isAdmin from admin context
 
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
 
-  // ✅ Only fetch categories if user is an admin
+  // ✅ Fetch categories only if admin
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -135,7 +135,7 @@ const CategoryManager = () => {
     }
   };
 
-  // ✅ Show access denial if not admin
+  // ✅ Access control
   if (!isAdmin) {
     return (
       <div className="p-6">

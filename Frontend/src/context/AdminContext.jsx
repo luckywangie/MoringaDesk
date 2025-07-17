@@ -1,16 +1,16 @@
-import React, { createContext, useState } from 'react';
+import React from 'react';
+import { createContext, useContext, useState } from 'react';
 
-export const AdminContext = createContext();
+const AdminContext = createContext();
 
 export const AdminProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const promoteToAdmin = () => setIsAdmin(true);
-  const demoteFromAdmin = () => setIsAdmin(false);
-
   return (
-    <AdminContext.Provider value={{ isAdmin, promoteToAdmin, demoteFromAdmin }}>
+    <AdminContext.Provider value={{ isAdmin, setIsAdmin }}>
       {children}
     </AdminContext.Provider>
   );
 };
+
+export const useAdmin = () => useContext(AdminContext);

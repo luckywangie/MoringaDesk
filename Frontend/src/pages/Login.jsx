@@ -1,5 +1,5 @@
-import React, { useContext, useState, useRef } from 'react';
-import { UserContext } from '../context/UserContext';
+import React, { useState, useRef } from 'react';
+import { useUser } from '../context/UserContext'; // ✅ correct import
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -9,7 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login_user } = useContext(UserContext);
+  const { login } = useUser(); // ✅ get login function from context
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const navigate = useNavigate();
@@ -21,9 +21,12 @@ const Login = () => {
       return;
     }
 
-    const success = await login_user(email, password);
-    if (success) {
+    const result = await login(email, password); // ✅ context login call
+    if (result.success) {
+      toast.success('Login successful!');
       navigate('/dashboard');
+    } else {
+      toast.error(result.message || 'Login failed');
     }
   };
 
@@ -33,7 +36,7 @@ const Login = () => {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const res = await fetch('/api/auth/google', {
+      const res = await fetch('http://localhost:5000/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: credentialResponse.credential }),
@@ -46,10 +49,8 @@ const Login = () => {
         return;
       }
 
-      // Store user and token (you can also update UserContext to include this)
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
-
       toast.success('Logged in with Google!');
       navigate('/dashboard');
     } catch (error) {
@@ -65,7 +66,6 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 border border-gray-200">
-        {/* Logo and Title */}
         <div className="flex flex-col items-center space-y-2 mb-6">
           <img
             src="https://i.postimg.cc/NfNCngcQ/moringa-logo.png"

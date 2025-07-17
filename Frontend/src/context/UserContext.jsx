@@ -1,74 +1,114 @@
-import React, { createContext, useState } from 'react';
-import { toast } from 'react-toastify';
+import React, { createContext, useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export const UserContext = createContext();
 
-export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
-  const DEFAULT_TEST_EMAIL = 'test@moringa.com';
-  const DEFAULT_TEST_PASSWORD = '1234';
+  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
 
-  const login_user = async (email, password) => {
-    const loginEmail = email || DEFAULT_TEST_EMAIL;
-    const loginPassword = password || DEFAULT_TEST_PASSWORD;
+  const navigate = useNavigate();
 
-    if (
-      loginEmail === DEFAULT_TEST_EMAIL &&
-      loginPassword === DEFAULT_TEST_PASSWORD
-    ) {
-      const dummyToken = 'fake-jwt-token';
+  // Login
+  const login = async (email, password) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
 
-      // ✅ Mark the user as admin
-      setUser({ id: 1, email: loginEmail, is_admin: true });
-      setToken(dummyToken);
+      const data = await res.json();
 
-      toast.success('Logged in as Admin!');
-      return true;
-    } else {
-      toast.error('Invalid email or password');
-      return false;
+      if (!res.ok) throw new Error(data.message || 'Login failed');
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setUser(data.user);
+      setToken(data.token);
+
+      if (data.user?.is_admin) {
+        navigate('/Admin');
+      } else {
+        navigate('/Dashboard');
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
   };
 
-  const logout_user = () => {
+  // Logout
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
-    setToken(null);
-    toast.info('Logged out.');
+    setToken('');
+    navigate('/login');
   };
 
-  const update_user_profile = async (userId, { username, email }) => {
-    toast.info('This feature is disabled in test mode.');
-    return false;
-  };
+  // ✅ Update profile
+  const updateProfile = async (userId, updatedData) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedData),
+      });
 
-  const delete_profile = async () => {
-    if (!user || !token) {
-      toast.error('You must be logged in.');
-      return;
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Update failed');
+
+      // Update local storage and state
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setUser(data.user);
+
+      return { success: true, user: data.user };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
+  };
 
-    const confirmed = window.confirm('Are you sure you want to delete your account? This cannot be undone.');
-    if (!confirmed) return;
+  // ✅ Delete profile
+  const deleteProfile = async (userId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    setUser(null);
-    setToken(null);
-    toast.success('Your account has been deleted (test mode).');
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Delete failed');
+
+      // Clear user from local storage and context
+      logout();
+
+      return { success: true, message: data.message };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   };
 
   return (
-    <UserContext.Provider
-      value={{
-        user,
-        token,
-        login_user,
-        logout_user,
-        update_user_profile,
-        delete_profile,
-      }}
-    >
+    <UserContext.Provider value={{ user, token, login, logout, updateProfile, deleteProfile }}>
       {children}
     </UserContext.Provider>
   );
 };
+
+export const useUser = () => useContext(UserContext);

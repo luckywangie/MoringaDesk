@@ -1,14 +1,16 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserContext } from '../context/UserContext';
+import { useUser } from '../context/UserContext';
+import { toast } from 'react-toastify';
 
 function Navbar() {
-  const { user, logout_user } = useContext(UserContext);
+  const { user, logout } = useUser();
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout_user();
+    logout();
+    toast.success('Logged out');
     setMenuOpen(false);
     navigate('/login');
   };
@@ -35,7 +37,7 @@ function Navbar() {
             <>
               <Link to="/" className={linkClasses}>Home</Link>
               <Link to="/about" className={linkClasses}>About</Link>
-              <Link to="/ask-question" className={linkClasses}>Ask Question</Link>
+              {user && <Link to="/ask-question" className={linkClasses}>Ask Question</Link>}
             </>
           )}
 
@@ -43,13 +45,14 @@ function Navbar() {
 
           {user && (
             <>
-              <Link to="/dashboard" className={linkClasses}>Dashboard</Link>
+              {!isAdmin && (
+                <Link to="/dashboard" className={linkClasses}>Dashboard</Link>
+              )}
               <Link to="/questions" className={linkClasses}>Questions</Link>
-              <Link to="/question-answer" className={linkClasses}>Q&A</Link>
               <Link to="/notifications" className={linkClasses}>Notifications</Link>
               <Link to="/profile" className={linkClasses}>Profile</Link>
               {isAdmin && (
-                <Link to="/category-manager" className={linkClasses}>Category Manager</Link>
+                <Link to="/admin" className={linkClasses}>Admin</Link>
               )}
             </>
           )}
@@ -96,7 +99,11 @@ function Navbar() {
             <>
               <Link to="/" onClick={() => setMenuOpen(false)} className={linkClasses}>Home</Link>
               <Link to="/about" onClick={() => setMenuOpen(false)} className={linkClasses}>About</Link>
-              <Link to="/ask-question" onClick={() => setMenuOpen(false)} className={linkClasses}>Ask Question</Link>
+              {user && (
+                <Link to="/ask-question" onClick={() => setMenuOpen(false)} className={linkClasses}>
+                  Ask Question
+                </Link>
+              )}
             </>
           )}
 
@@ -104,15 +111,14 @@ function Navbar() {
 
           {user && (
             <>
-              <Link to="/dashboard" onClick={() => setMenuOpen(false)} className={linkClasses}>Dashboard</Link>
+              {!isAdmin && (
+                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className={linkClasses}>Dashboard</Link>
+              )}
               <Link to="/questions" onClick={() => setMenuOpen(false)} className={linkClasses}>Questions</Link>
-              <Link to="/question-answer" onClick={() => setMenuOpen(false)} className={linkClasses}>Q&A</Link>
               <Link to="/notifications" onClick={() => setMenuOpen(false)} className={linkClasses}>Notifications</Link>
               <Link to="/profile" onClick={() => setMenuOpen(false)} className={linkClasses}>Profile</Link>
               {isAdmin && (
-                <Link to="/category-manager" onClick={() => setMenuOpen(false)} className={linkClasses}>
-                  Category Manager
-                </Link>
+                <Link to="/admin" onClick={() => setMenuOpen(false)} className={linkClasses}>Admin</Link>
               )}
             </>
           )}
