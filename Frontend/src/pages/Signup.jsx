@@ -5,7 +5,7 @@ import { UserContext } from '../context/UserContext';
 import { GoogleLogin } from '@react-oauth/google';
 
 const Signup = () => {
-  const { login_user, google_login_user } = useContext(UserContext);
+  const { login, register, google_login_user } = useContext(UserContext);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -36,8 +36,20 @@ const Signup = () => {
       return;
     }
 
+    // Register with correct payload
+    const result = await register({
+      username: name,
+      email,
+      password,
+    });
+
+    if (!result.success) {
+      toast.error(result.message); 
+      return;
+    }
+
     toast.success('Signup successful!');
-    await login_user(email, password);
+    await login(email, password);
     navigate('/dashboard');
   };
 
@@ -66,7 +78,9 @@ const Signup = () => {
           <h2 className="text-xl font-bold text-green-700">MoringaDesk</h2>
         </div>
 
-        <h3 className="text-lg font-semibold text-center text-gray-700 mb-6">Create an account</h3>
+        <h3 className="text-lg font-semibold text-center text-gray-700 mb-6">
+          Create an account
+        </h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
