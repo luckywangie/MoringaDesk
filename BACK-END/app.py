@@ -25,7 +25,7 @@ from views import user_bp
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
     # Use ONE shared secret for everything (dev only)
     shared_secret = 'moringa_secret_2025'
