@@ -12,7 +12,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 # Configuration (Use environment variables in production)
 SECRET_KEY = 'moringa_secret_2025'
-GOOGLE_CLIENT_ID = 'your-google-client-id.apps.googleusercontent.com'  # Replace this with your real client ID
+GOOGLE_CLIENT_ID = 'http://749988549429-o1gthles88oiq0p4s4un1lgs3a2fn1nc.apps.googleusercontent.com'  # Replace this with your real client ID
 
 # -------------------- JWT Helpers --------------------
 
