@@ -12,6 +12,8 @@ google-auth = "*"
 jsonify = "*"
 flask = "*"
 migrate = "*"
+google = "*"
+auth = "*"
 
 [dev-packages]
 
