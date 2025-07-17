@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Answers, Question
+from models import db, Answers, Question, User
 
 answers_bp = Blueprint('answers_bp', __name__, url_prefix='/api')
 
@@ -34,6 +34,38 @@ def create_answer(question_id):
     db.session.commit()
 
     return jsonify({'success': 'Answer created successfully', 'answer': serialize_answer(new_answer)}), 201
+
+# GET: Approved answers for a specific question
+@answers_bp.route('/questions/<int:question_id>/answers/is_approved', methods=['GET'])
+def get_approved_answers(question_id):
+    answers = Answers.query.filter_by(question_id=question_id, is_approved=True).all()
+    return jsonify([serialize_answer(ans) for ans in answers]), 200
+
+# PUT: Admin approves an answer
+@answers_bp.route('/answers/<int:answer_id>/is_approved', methods=['PUT'])
+@jwt_required()
+def approve_answer(answer_id):
+    current_user_id = get_jwt_identity()
+    print("JWT Identity:", current_user_id)
+
+    user = User.query.get(current_user_id)
+    if user:
+        print("User found:", user.username, "is_admin:", user.is_admin)
+    else:
+        print("User not found in DB")
+
+    if not user or not user.is_admin:
+        return jsonify({'error': 'Access denied. Admins only.'}), 403
+
+    answer = Answers.query.get(answer_id)
+    if not answer:
+        return jsonify({'error': 'Answer not found'}), 404
+
+    answer.is_approved = True
+    db.session.commit()
+
+    return jsonify({'success': 'Answer approved successfully'}), 200
+
 
 # READ: Get all answers for a question
 @answers_bp.route('/questions/<int:question_id>/answers', methods=['GET'])
