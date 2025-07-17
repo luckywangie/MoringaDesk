@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Reports, Question, User, Category  # noqa: F401
-from datetime import datetime  # noqa: F401
+from models import db, Reports, Question, User, Category  
+from datetime import datetime  
 
 reports_bp = Blueprint('reports_bp', __name__, url_prefix='/api')
 
@@ -69,7 +69,7 @@ def get_report(id):
 
     return jsonify(serialize_report(report)), 200
 
-# ✅ UPDATED: UPDATE a report (owner or admin)
+# UPDATED: UPDATE a report (owner or admin)
 @reports_bp.route('/reports/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_report(id):

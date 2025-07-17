@@ -9,7 +9,7 @@ user_bp = Blueprint('user', __name__, url_prefix='/api/users')
 @token_required
 def get_users(current_user):
     if not current_user.is_admin:
-        return jsonify({'message': 'Admin access required'}), 403
+        return jsonify({'error': 'Admin access required'}), 403
 
     users = User.query.all()
     result = [{
@@ -27,7 +27,7 @@ def get_users(current_user):
 def get_user(current_user, user_id):
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'message': 'User not found'}), 404
+        return jsonify({'error': 'User not found'}), 404
 
     return jsonify({
         'id': user.id,
@@ -40,12 +40,12 @@ def get_user(current_user, user_id):
 @user_bp.route('/<int:user_id>', methods=['PUT'])
 @token_required
 def update_user(current_user, user_id):
-    if current_user.id != user_id and not current_user.is_admin:
-        return jsonify({'message': 'Unauthorized: You can only update your own profile or be an admin.'}), 403
+    if int(current_user.id) != int(user_id):
+        return jsonify({'error': 'Unauthorized: You can only update your own profile.'}), 403
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({'message': 'User not found'}), 404
+        return jsonify({'error': 'User not found'}), 404
 
     data = request.get_json()
     user.username = data.get('username', user.username)
@@ -53,7 +53,7 @@ def update_user(current_user, user_id):
     db.session.commit()
 
     return jsonify({
-        'message': 'User updated successfully',
+        'success': 'User updated successfully',
         'user': {
             'id': user.id,
             'username': user.username,

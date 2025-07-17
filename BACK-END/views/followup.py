@@ -24,7 +24,7 @@ def create_followup():
     user_id = get_jwt_identity()
 
     question_id = data.get('question_id')
-    answer_id = data.get('answer_id')  # Optional
+    answer_id = data.get('answer_id')  
     content = data.get('content')
 
     if not question_id or not content:

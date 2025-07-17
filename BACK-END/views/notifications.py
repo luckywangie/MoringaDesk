@@ -21,7 +21,7 @@ def serialize_notification(notification):
 def create_notification():
     data = request.get_json()
     user_id = data.get('user_id')  # Admin can specify this
-    current_user = get_jwt_identity()  # noqa: F841
+    current_user = get_jwt_identity() 
 
     type = data.get('type')
     message = data.get('message')

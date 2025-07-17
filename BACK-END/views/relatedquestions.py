@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
-from models import db, RelatedQuestions, Question  # noqa: F401
+from models import db, RelatedQuestions, Question  
 
 related_questions_bp = Blueprint('related_questions_bp', __name__, url_prefix='/api')
 

@@ -7,10 +7,10 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# ✅ Set up blueprint with prefix
+# Set up blueprint with prefix
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
-# 🔐 Configuration (Use environment variables in production)
+# Configuration (Use environment variables in production)
 SECRET_KEY = 'moringa_secret_2025'
 GOOGLE_CLIENT_ID = 'your-google-client-id.apps.googleusercontent.com'  # Replace this with your real client ID
 
@@ -18,7 +18,7 @@ GOOGLE_CLIENT_ID = 'your-google-client-id.apps.googleusercontent.com'  # Replace
 
 def generate_jwt(user):
     payload = {
-        'sub': str(user.id),  # ✅ Added for compatibility with JWT libraries that expect a subject
+        'sub': str(user.id),  # Added for compatibility with JWT libraries that expect a subject
         'id': user.id,
         'email': user.email,
         'username': user.username,
@@ -69,10 +69,10 @@ def register():
     password = data.get('password')
 
     if not all([username, email, password]):
-        return jsonify({'message': 'Missing required fields'}), 400
+        return jsonify({'error': 'Missing required fields'}), 400
 
     if User.query.filter_by(email=email).first():
-        return jsonify({'message': 'Email already registered'}), 400
+        return jsonify({'error': 'Email already registered'}), 400
 
     hashed_password = generate_password_hash(password)
 
@@ -80,7 +80,7 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({'message': 'User registered successfully'}), 201
+    return jsonify({'success': 'User registered successfully'}), 201
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -89,12 +89,12 @@ def login():
     password = data.get('password')
 
     if not all([email, password]):
-        return jsonify({'message': 'Missing email or password'}), 400
+        return jsonify({'error': 'Missing email or password'}), 400
 
     user = User.query.filter_by(email=email).first()
 
     if not user or not check_password_hash(user.password, password):
-        return jsonify({'message': 'Invalid email or password'}), 401
+        return jsonify({'error': 'Invalid email or password'}), 401
 
     token = generate_jwt(user)
     return jsonify({
@@ -137,8 +137,8 @@ def google_login():
         }), 200
 
     except ValueError:
-        return jsonify({'message': 'Invalid Google token'}), 400
-
+        return jsonify({'error': 'Invalid Google token'}), 400
+    
 @auth_bp.route('/me', methods=['GET'])
 @token_required
 def me(current_user):
@@ -152,4 +152,4 @@ def me(current_user):
 @auth_bp.route('/logout', methods=['POST'])
 @token_required
 def logout(current_user):
-    return jsonify({'message': 'Logged out successfully. Frontend should delete token.'}), 200
+    return jsonify({'success': 'Logged out successfully. Frontend should delete token.'}), 200

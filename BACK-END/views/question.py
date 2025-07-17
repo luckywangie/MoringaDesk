@@ -16,17 +16,17 @@ def create_question(current_user):
     language = data.get('language')  # <-- Get language
 
     if not title or not description:
-        return jsonify({'message': 'Title and description are required'}), 400
+        return jsonify({'error': 'Title and description are required'}), 400
 
     if not category_id:
-        return jsonify({'message': 'Category ID is required'}), 400
+        return jsonify({'error': 'Category ID is required'}), 400
 
     if not language:
-        return jsonify({'message': 'Language is required'}), 400  # <-- Validate language
+        return jsonify({'error': 'Language is required'}), 400  # <-- Validate language
 
     category = Category.query.get(category_id)
     if not category:
-        return jsonify({'message': 'Invalid category ID'}), 400
+        return jsonify({'error': 'Invalid category ID'}), 400
 
     new_question = Question(
         title=title,
@@ -41,7 +41,7 @@ def create_question(current_user):
     db.session.commit()
 
     return jsonify({
-        'message': 'Question created successfully',
+        'success': 'Question created successfully',
         'question': {
             'id': new_question.id,
             'title': new_question.title,
@@ -76,7 +76,7 @@ def get_questions():
 def get_question(question_id):
     question = Question.query.get(question_id)
     if not question:
-        return jsonify({'message': 'Question not found'}), 404
+        return jsonify({'error': 'Question not found'}), 404
 
     return jsonify({
         'id': question.id,
@@ -94,10 +94,10 @@ def get_question(question_id):
 def update_question(current_user, question_id):
     question = Question.query.get(question_id)
     if not question:
-        return jsonify({'message': 'Question not found'}), 404
+        return jsonify({'error': 'Question not found'}), 404
 
     if question.user_id != current_user.id and not current_user.is_admin:
-        return jsonify({'message': 'Unauthorized to update this question'}), 403
+        return jsonify({'error': 'Unauthorized to update this question'}), 403
 
     data = request.get_json()
     question.title = data.get('title', question.title)
@@ -108,7 +108,7 @@ def update_question(current_user, question_id):
     db.session.commit()
 
     return jsonify({
-        'message': 'Question updated successfully',
+        'success': 'Question updated successfully',
         'question': {
             'id': question.id,
             'title': question.title,
@@ -126,12 +126,12 @@ def update_question(current_user, question_id):
 def delete_question(current_user, question_id):
     question = Question.query.get(question_id)
     if not question:
-        return jsonify({'message': 'Question not found'}), 404
+        return jsonify({'error': 'Question not found'}), 404
 
     if question.user_id != current_user.id and not current_user.is_admin:
-        return jsonify({'message': 'Unauthorized to delete this question'}), 403
+        return jsonify({'error': 'Unauthorized to delete this question'}), 403
 
     db.session.delete(question)
     db.session.commit()
 
-    return jsonify({'message': f'Question {question.title} deleted successfully'}), 200
+    return jsonify({'success': f'Question {question.title} deleted successfully'}), 200
