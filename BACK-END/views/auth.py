@@ -43,18 +43,18 @@ def token_required(f):
             try:
                 token = request.headers['Authorization'].split(" ")[1]
             except IndexError:
-                return jsonify({'message': 'Invalid token format'}), 401
+                return jsonify({'error': 'Invalid token format'}), 401
 
         if not token:
-            return jsonify({'message': 'Token is missing!'}), 401
+            return jsonify({'error': 'Token is missing!'}), 401
 
         data = decode_jwt(token)
         if not data:
-            return jsonify({'message': 'Token is invalid or expired!'}), 401
+            return jsonify({'error': 'Token is invalid or expired!'}), 401
 
         user = User.query.get(data['id'])
         if not user:
-            return jsonify({'message': 'User not found'}), 404
+            return jsonify({'error': 'User not found'}), 404
 
         return f(user, *args, **kwargs)
     return decorated
