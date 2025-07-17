@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
   const navigate = useNavigate();
 
-  // ✅ Register
+  // Register
   const register = async ({ username, email, password }) => {
     try {
       const res = await fetch('http://127.0.0.1:5000/api/auth/register', {
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Login
+  // Login
   const login = async (email, password) => {
     try {
       const res = await fetch('http://127.0.0.1:5000/api/auth/login', {
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Logout
+  // Logout
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
     navigate('/login');
   };
 
-  // ✅ Update profile
+  // Update profile
   const updateProfile = async (userId, updatedData) => {
     try {
       const res = await fetch(`http://127.0.0.1:5000/api/users/${userId}`, {
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Delete profile
+  // Delete profile
   const deleteProfile = async (userId) => {
     try {
       const res = await fetch(`http://127.0.0.1:5000/api/users/${userId}`, {
