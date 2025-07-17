@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Votes, Answers, User
+from models import db, Votes, Answers, User  # noqa: F401
 
 
 votes_bp = Blueprint('votes_bp', __name__, url_prefix='/api')
