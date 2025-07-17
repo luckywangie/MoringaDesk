@@ -1,84 +1,91 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, FollowUp
-from views.auth import token_required
+from datetime import datetime
 
-followup_bp = Blueprint('followup', __name__, url_prefix='/followup')
+followup_bp = Blueprint('followup_bp', __name__, url_prefix='/api')
 
+# Serializer
+def serialize_followup(followup):
+    return {
+        'id': followup.id,
+        'user_id': followup.user_id,
+        'question_id': followup.question_id,
+        'answer_id': followup.answer_id,
+        'content': followup.content,
+        'created_at': followup.created_at.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    }
 
-#  Create Follow-up (User follows a question or answer)
-@followup_bp.route('/', methods=['POST'])
-@token_required
-def create_followup(current_user):
+# CREATE follow-up
+@followup_bp.route('/followups', methods=['POST'])
+@jwt_required()
+def create_followup():
     data = request.get_json()
-    question_id = data.get('question_id')
-    answer_id = data.get('answer_id')
+    user_id = get_jwt_identity()
 
-    if not question_id and not answer_id:
-        return jsonify({'error': 'Either question_id or answer_id is required'}), 400
+    question_id = data.get('question_id')
+    answer_id = data.get('answer_id')  # Optional
+    content = data.get('content')
+
+    if not question_id or not content:
+        return jsonify({'message': 'question_id and content are required'}), 400
 
     followup = FollowUp(
-        user_id=current_user.id,
+        user_id=user_id,
         question_id=question_id,
-        answer_id=answer_id
+        answer_id=answer_id,
+        content=content
     )
     db.session.add(followup)
     db.session.commit()
-    return jsonify({'message': 'Follow-up created', 'id': followup.id}), 201
 
+    return jsonify({'message': 'Follow-up created successfully', 'followup': serialize_followup(followup)}), 201
 
-# Get all follow-ups for current user
-@followup_bp.route('/', methods=['GET'])
-@token_required
-def get_user_followups(current_user):
-    followups = FollowUp.query.filter_by(user_id=current_user.id).all()
-    return jsonify([
-        {
-            'id': f.id,
-            'question_id': f.question_id,
-            'answer_id': f.answer_id
-        } for f in followups
-    ]), 200
+# READ all follow-ups
+@followup_bp.route('/followups', methods=['GET'])
+def get_all_followups():
+    followups = FollowUp.query.order_by(FollowUp.created_at.desc()).all()
+    return jsonify([serialize_followup(f) for f in followups]), 200
 
-
-# Get a specific follow-up
-@followup_bp.route('/<int:followup_id>', methods=['GET'])
-@token_required
-def get_followup(current_user, followup_id):
-    followup = FollowUp.query.filter_by(id=followup_id, user_id=current_user.id).first()
+# READ one follow-up
+@followup_bp.route('/followups/<int:id>', methods=['GET'])
+def get_single_followup(id):
+    followup = FollowUp.query.get(id)
     if not followup:
-        return jsonify({'error': 'Follow-up not found'}), 404
+        return jsonify({'message': 'Follow-up not found'}), 404
+    return jsonify(serialize_followup(followup)), 200
 
-    return jsonify({
-        'id': followup.id,
-        'question_id': followup.question_id,
-        'answer_id': followup.answer_id
-    }), 200
-
-
-# Update a follow-up (e.g., change followed question/answer)
-@followup_bp.route('/<int:followup_id>', methods=['PUT'])
-@token_required
-def update_followup(current_user, followup_id):
-    followup = FollowUp.query.filter_by(id=followup_id, user_id=current_user.id).first()
+# UPDATE follow-up
+@followup_bp.route('/followups/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_followup(id):
+    followup = FollowUp.query.get(id)
     if not followup:
-        return jsonify({'error': 'Follow-up not found'}), 404
+        return jsonify({'message': 'Follow-up not found'}), 404
+
+    user_id = get_jwt_identity()
+    if followup.user_id != user_id:
+        return jsonify({'message': 'Unauthorized'}), 403
 
     data = request.get_json()
-    followup.question_id = data.get('question_id', followup.question_id)
+    followup.content = data.get('content', followup.content)
     followup.answer_id = data.get('answer_id', followup.answer_id)
 
     db.session.commit()
-    return jsonify({'message': 'Follow-up updated'}), 200
+    return jsonify({'message': 'Follow-up updated successfully', 'followup': serialize_followup(followup)}), 200
 
-
-# Delete follow-up (Unfollow)
-@followup_bp.route('/<int:followup_id>', methods=['DELETE'])
-@token_required
-def delete_followup(current_user, followup_id):
-    followup = FollowUp.query.filter_by(id=followup_id, user_id=current_user.id).first()
+# DELETE follow-up
+@followup_bp.route('/followups/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_followup(id):
+    followup = FollowUp.query.get(id)
     if not followup:
-        return jsonify({'error': 'Follow-up not found'}), 404
+        return jsonify({'message': 'Follow-up not found'}), 404
+
+    user_id = get_jwt_identity()
+    if followup.user_id != user_id:
+        return jsonify({'message': 'Unauthorized'}), 403
 
     db.session.delete(followup)
     db.session.commit()
-    return jsonify({'message': 'Follow-up deleted'}), 200
+    return jsonify({'message': 'Follow-up deleted successfully'}), 200

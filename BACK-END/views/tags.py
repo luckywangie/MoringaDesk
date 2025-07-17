@@ -1,84 +1,72 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required
 from models import db, Tags
-from views.auth import token_required
 
-tags_bp = Blueprint('tags', __name__, url_prefix='/tags')
+tags_bp = Blueprint('tags_bp', __name__, url_prefix='/api')
 
-#  Create a new tag (Admin only)
-@tags_bp.route('/', methods=['POST'])
-@token_required
-def create_tag(current_user):
-    if not current_user.is_admin:
-        return jsonify({'error': 'Admin privileges required'}), 403
-
-    data = request.get_json()
-    name = data.get('name')
-    type_ = data.get('type')
-
-    if not name:
-        return jsonify({'error': 'Tag name is required'}), 400
-
-    tag = Tags(name=name, type=type_)
-    db.session.add(tag)
-    db.session.commit()
-
-    return jsonify({'message': 'Tag created', 'id': tag.id}), 201
-
-#  Get all tags
-@tags_bp.route('/', methods=['GET'])
-def get_all_tags():
-    tags = Tags.query.all()
-    return jsonify([
-        {
-            'id': tag.id,
-            'name': tag.name,
-            'type': tag.type,
-            'created_at': tag.created_at
-        } for tag in tags
-    ]), 200
-
-# Get a tag by ID
-@tags_bp.route('/<int:tag_id>', methods=['GET'])
-def get_tag(tag_id):
-    tag = Tags.query.get(tag_id)
-    if not tag:
-        return jsonify({'error': 'Tag not found'}), 404
-
-    return jsonify({
+def serialize_tag(tag):
+    return {
         'id': tag.id,
         'name': tag.name,
         'type': tag.type,
-        'created_at': tag.created_at
-    }), 200
+        'created_at': tag.created_at.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    }
 
-# Update a tag (Admin only)
-@tags_bp.route('/<int:tag_id>', methods=['PUT'])
-@token_required
-def update_tag(current_user, tag_id):
-    if not current_user.is_admin:
-        return jsonify({'error': 'Admin privileges required'}), 403
+# CREATE a tag
+@tags_bp.route('/tags', methods=['POST'])
+@jwt_required()
+def create_tag():
+    data = request.get_json()
+    name = data.get('name')
+    type = data.get('type')
 
-    tag = Tags.query.get(tag_id)
+    if not name:
+        return jsonify({'message': 'Name is required'}), 400
+
+    tag = Tags(name=name, type=type)
+    db.session.add(tag)
+    db.session.commit()
+
+    return jsonify({'message': 'Tag created', 'tag': serialize_tag(tag)}), 201
+
+# READ all tags
+@tags_bp.route('/tags', methods=['GET'])
+@jwt_required()
+def get_all_tags():
+    tags = Tags.query.order_by(Tags.created_at.desc()).all()
+    return jsonify([serialize_tag(tag) for tag in tags]), 200
+
+# READ tag by id
+@tags_bp.route('/tags/<int:id>', methods=['GET'])
+@jwt_required()
+def get_tag(id):
+    tag = Tags.query.get(id)
     if not tag:
-        return jsonify({'error': 'Tag not found'}), 404
+        return jsonify({'message': 'Tag not found'}), 404
+    return jsonify(serialize_tag(tag)), 200
+
+# UPDATE a tag
+@tags_bp.route('/tags/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_tag(id):
+    tag = Tags.query.get(id)
+    if not tag:
+        return jsonify({'message': 'Tag not found'}), 404
 
     data = request.get_json()
     tag.name = data.get('name', tag.name)
     tag.type = data.get('type', tag.type)
 
     db.session.commit()
-    return jsonify({'message': 'Tag updated'}), 200
+    return jsonify({'message': 'Tag updated', 'tag': serialize_tag(tag)}), 200
 
-#  Delete a tag (Admin only)
-@tags_bp.route('/<int:tag_id>', methods=['DELETE'])
-@token_required
-def delete_tag(current_user, tag_id):
-    if not current_user.is_admin:
-        return jsonify({'error': 'Admin privileges required'}), 403
-
-    tag = Tags.query.get(tag_id)
+# DELETE a tag
+@tags_bp.route('/tags/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_tag(id):
+    tag = Tags.query.get(id)
     if not tag:
-        return jsonify({'error': 'Tag not found'}), 404
+        return jsonify({'message': 'Tag not found'}), 404
 
     db.session.delete(tag)
     db.session.commit()

@@ -1,104 +1,110 @@
 from flask import Blueprint, request, jsonify
-from models import db, Notifications
-from views.auth import token_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from models import db, Notifications, User
 
-notification_bp = Blueprint('notifications', __name__, url_prefix='/notifications')
+notification_bp = Blueprint('notification_bp', __name__, url_prefix='/api')
 
+# Serializer
+def serialize_notification(notification):
+    return {
+        'id': notification.id,
+        'user_id': notification.user_id,
+        'type': notification.type,
+        'message': notification.message,
+        'created_at': notification.created_at.strftime('%a, %d %b %Y %H:%M:%S GMT'),
+        'is_read': notification.is_read
+    }
 
-# Create a new notification (Admin only)
-@notification_bp.route('/', methods=['POST'])
-@token_required
-def create_notification(current_user):
-    if not current_user.is_admin:
-        return jsonify({'message': 'Admin privileges required'}), 403
-
+# CREATE a notification
+@notification_bp.route('/notifications', methods=['POST'])
+@jwt_required()
+def create_notification():
     data = request.get_json()
-    user_id = data.get('user_id')
-    notif_type = data.get('type')
+    user_id = data.get('user_id')  # Admin can specify this
+    current_user = get_jwt_identity()  # noqa: F841
+
+    type = data.get('type')
     message = data.get('message')
 
-    if not all([user_id, notif_type, message]):
-        return jsonify({'error': 'user_id, type, and message are required'}), 400
+    if not user_id or not type or not message:
+        return jsonify({'message': 'user_id, type, and message are required'}), 400
 
     notification = Notifications(
         user_id=user_id,
-        type=notif_type,
+        type=type,
         message=message
     )
     db.session.add(notification)
     db.session.commit()
 
-    return jsonify({'message': 'Notification created', 'id': notification.id}), 201
+    return jsonify({'message': 'Notification created', 'notification': serialize_notification(notification)}), 201
 
+# READ all notifications (admin only)
+@notification_bp.route('/notifications', methods=['GET'])
+@jwt_required()
+def get_all_notifications():
+    current_user = get_jwt_identity()
+    user = User.query.get(current_user)
+    if not user.is_admin:
+        return jsonify({'message': 'Admin access required'}), 403
 
-# Get all notifications for the current user
-@notification_bp.route('/', methods=['GET'])
-@token_required
-def get_user_notifications(current_user):
-    notifications = Notifications.query.filter_by(user_id=current_user.id).order_by(Notifications.created_at.desc()).all()
-    return jsonify([
-        {
-            'id': n.id,
-            'type': n.type,
-            'message': n.message,
-            'created_at': n.created_at,
-            'is_read': n.is_read
-        } for n in notifications
-    ]), 200
+    notifications = Notifications.query.order_by(Notifications.created_at.desc()).all()
+    return jsonify([serialize_notification(n) for n in notifications]), 200
 
+# READ my notifications (authenticated user)
+@notification_bp.route('/notifications/me', methods=['GET'])
+@jwt_required()
+def get_my_notifications():
+    current_user = get_jwt_identity()
+    notifications = Notifications.query.filter_by(user_id=current_user).order_by(Notifications.created_at.desc()).all()
+    return jsonify([serialize_notification(n) for n in notifications]), 200
 
-# Get a single notification by ID (only for owner or admin)
-@notification_bp.route('/<int:notification_id>', methods=['GET'])
-@token_required
-def get_notification(current_user, notification_id):
-    notification = Notifications.query.get(notification_id)
+# READ one notification
+@notification_bp.route('/notifications/<int:id>', methods=['GET'])
+@jwt_required()
+def get_notification(id):
+    notification = Notifications.query.get(id)
     if not notification:
         return jsonify({'message': 'Notification not found'}), 404
 
-    if notification.user_id != current_user.id and not current_user.is_admin:
-        return jsonify({'message': 'Access denied'}), 403
+    current_user = get_jwt_identity()
+    if notification.user_id != current_user:
+        return jsonify({'message': 'Unauthorized'}), 403
 
-    return jsonify({
-        'id': notification.id,
-        'type': notification.type,
-        'message': notification.message,
-        'created_at': notification.created_at,
-        'is_read': notification.is_read
-    }), 200
+    return jsonify(serialize_notification(notification)), 200
 
-
-# Update a notification's read status (only owner or admin)
-@notification_bp.route('/<int:notification_id>', methods=['PUT'])
-@token_required
-def update_notification(current_user, notification_id):
-    notification = Notifications.query.get(notification_id)
+# UPDATE notification (mark as read/unread)
+@notification_bp.route('/notifications/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_notification(id):
+    notification = Notifications.query.get(id)
     if not notification:
         return jsonify({'message': 'Notification not found'}), 404
 
-    if notification.user_id != current_user.id and not current_user.is_admin:
-        return jsonify({'message': 'Access denied'}), 403
+    current_user = get_jwt_identity()
+    if notification.user_id != current_user:
+        return jsonify({'message': 'Unauthorized'}), 403
 
     data = request.get_json()
-    is_read = data.get('is_read')
+    notification.is_read = data.get('is_read', notification.is_read)
 
-    if is_read is not None:
-        notification.is_read = is_read
-        db.session.commit()
-        return jsonify({'message': 'Notification updated'}), 200
-    else:
-        return jsonify({'error': 'Missing is_read field'}), 400
+    db.session.commit()
+    return jsonify({'message': 'Notification updated', 'notification': serialize_notification(notification)}), 200
 
-
-# Delete a notification (only owner or admin)
-@notification_bp.route('/<int:notification_id>', methods=['DELETE'])
-@token_required
-def delete_notification(current_user, notification_id):
-    notification = Notifications.query.get(notification_id)
+# DELETE notification
+@notification_bp.route('/notifications/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_notification(id):
+    notification = Notifications.query.get(id)
     if not notification:
         return jsonify({'message': 'Notification not found'}), 404
 
-    if notification.user_id != current_user.id and not current_user.is_admin:
-        return jsonify({'message': 'Access denied'}), 403
+    current_user = get_jwt_identity()
+    user = User.query.get(current_user)
+
+    # Only the owner or admin can delete
+    if notification.user_id != current_user and not user.is_admin:
+        return jsonify({'message': 'Unauthorized'}), 403
 
     db.session.delete(notification)
     db.session.commit()

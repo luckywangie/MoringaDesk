@@ -1,94 +1,79 @@
-from flask import request, jsonify, Blueprint
+from flask import Blueprint, request, jsonify
 from models import db, User
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from views.auth import token_required
+from .auth import token_required  # fixed: relative import for Blueprint
 
-user_bp = Blueprint("user_bp", __name__)
+user_bp = Blueprint('user', __name__, url_prefix='/api/users')
 
-# get all users "ADMIN"
-@user_bp.route("/api/users", methods=["GET"])
-@jwt_required()
-def get_all_users():
+# -------------------- Get All Users (Admin Only) --------------------
+@user_bp.route('', methods=['GET'])  # no trailing slash to avoid 404
+@token_required
+def get_users(current_user):
+    if not current_user.is_admin:
+        return jsonify({'message': 'Admin access required'}), 403
+
     users = User.query.all()
-    return jsonify([{
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-        "is_admin": user.is_admin,
-        "is_active": user.is_active,
-    } for user in users]), 200
+    result = [{
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'is_admin': user.is_admin
+    } for user in users]
 
-# get user by id "ADMIN"
-@user_bp.route("/api/users/<user_id>", methods=["GET"])
-@jwt_required()
-def get_user_by_id(user_id):
-    user = user.query.get(user_id)
+    return jsonify(result), 200
+
+# -------------------- Get One User --------------------
+@user_bp.route('/<int:user_id>', methods=['GET'])
+@token_required
+def get_user(current_user, user_id):
+    user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
-    user_data = {
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-        "is_admin": user.is_admin,
-        "is_active": user.is_active,
-        "created_at": user.created_at.isoformat(),
-        "updated_at": user.updated_at.isoformat(),
-        'questions': [{
-            'id': q.id,
-            'title': q.title,
-            'description': q.description,
-            'is_solved': q.is_solved,
-            'created_at': q.created_at.isoformat(),
-            'language': q.language
-        } for q in user.questions],
-        'answers': [{
-            'id': a.id,
-            'content': a.content[:100] + '...' if len(a.content) > 150 else a.content,
-            'id': a.id,
-            'question_title': a.question.title,
-            'vote_count': a.vote_count,
-            'created_at': a.created_at.isoformat()
-        } for a in user.answers]
-    }
-    return jsonify(user_data), 200
+        return jsonify({'message': 'User not found'}), 404
 
-# update user
-@user_bp.route("/api/users/<user_id>", methods=["PUT"])
-@jwt_required()
-def update_user(user_id):
-    current_user_id = get_jwt_identity()
-    if current_user_id != user_id:
-        return jsonify({"error": "Unauthorized"}), 403
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'is_admin': user.is_admin
+    }), 200
+
+# -------------------- Update User --------------------
+@user_bp.route('/<int:user_id>', methods=['PUT'])
+@token_required
+def update_user(current_user, user_id):
+    if current_user.id != user_id and not current_user.is_admin:
+        return jsonify({'message': 'Unauthorized: You can only update your own profile or be an admin.'}), 403
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({'message': 'User not found'}), 404
 
     data = request.get_json()
-    if 'username' in data:
-        user.username = data['username']
-    if 'email' in data:
-        user.email = data['email']
-    if 'is_active' in data:
-        user.is_active = data['is_active']
-    if 'is_admin' in data:
-        user.is_admin = data['is_admin']
-
+    user.username = data.get('username', user.username)
+    user.email = data.get('email', user.email)
     db.session.commit()
-    return jsonify({"success": "User updated successfully"}), 200
 
-# delete user
-@user_bp.route("/api/users/<user_id>", methods=["DELETE"])
-@jwt_required()
-def delete_user(user_id):
-    current_user_id = get_jwt_identity()
-    if current_user_id != user_id:
-        return jsonify({"error": "Unauthorized"}), 403
+    return jsonify({
+        'message': 'User updated successfully',
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_admin': user.is_admin
+        }
+    }), 200
+
+# -------------------- Delete User (Admin or Self) --------------------
+@user_bp.route('/<int:user_id>', methods=['DELETE'])
+@token_required
+def delete_user(current_user, user_id):
+    if current_user.id != user_id and not current_user.is_admin:
+        return jsonify({'message': 'Unauthorized: Only the user or an admin can delete this account.'}), 403
 
     user = User.query.get(user_id)
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({'message': 'User not found'}), 404
 
     db.session.delete(user)
     db.session.commit()
-    return jsonify({"success": "User deleted successfully"}), 200
+
+    return jsonify({'message': f'User {user.username} deleted successfully'}), 200
