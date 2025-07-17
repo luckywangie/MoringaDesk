@@ -6,12 +6,13 @@ name = "pypi"
 [packages]
 sqlalchemy = "*"
 flask-sqlalchemy = "*"
-flask-migrate = "*"
 flask-cors = "*"
 google-auth = "*"
 jsonify = "*"
 flask = "*"
 migrate = "*"
+flask-migrate = "*"
+flask-jwt-extended = "*"
 
 [dev-packages]
 
