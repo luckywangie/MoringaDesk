@@ -74,6 +74,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ Google Login Handler
+  const google_login_user = async (googleToken) => {
+    try {
+      const res = await fetch('http://127.0.0.1:5000/api/auth/google-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: googleToken }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Google login failed');
+        return false;
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setUser(data.user);
+      setToken(data.token);
+
+      toast.success('Google login successful');
+
+      if (data.user?.is_admin) {
+        navigate('/Admin');
+      } else {
+        navigate('/Dashboard');
+      }
+
+      return true;
+    } catch (error) {
+      toast.error(error.message || 'Google login failed');
+      return false;
+    }
+  };
+
   // Logout
   const logout = () => {
     localStorage.removeItem('token');
@@ -144,6 +180,9 @@ export const AuthProvider = ({ children }) => {
         register,
         updateProfile,
         deleteProfile,
+        google_login_user, // ✅ Make available to Signup.jsx
+        setUser,
+        setToken,
       }}
     >
       {children}
