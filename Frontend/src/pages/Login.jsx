@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useUser } from '../context/UserContext'; // ✅ correct import
+import { useUser } from '../context/UserContext'; //  correct import
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -9,7 +9,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useUser(); // ✅ get login function from context
+  const { login } = useUser(); //  get login function from context
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ const Login = () => {
       return;
     }
 
-    const result = await login(email, password); // ✅ context login call
+    const result = await login(email, password); //  context login call
     if (result.success) {
       toast.success('Login successful!');
       navigate('/dashboard');

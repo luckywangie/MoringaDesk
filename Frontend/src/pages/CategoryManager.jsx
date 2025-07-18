@@ -4,15 +4,15 @@ import { useAdmin } from '../context/AdminContext';
 import { toast } from 'react-toastify';
 
 const CategoryManager = () => {
-  const { token } = useUser();         // ✅ Access token from user context
-  const { isAdmin } = useAdmin();      // ✅ Access isAdmin from admin context
+  const { token } = useUser();         //  Access token from user context
+  const { isAdmin } = useAdmin();      //  Access isAdmin from admin context
 
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
 
-  // ✅ Fetch categories only if admin
+  //  Fetch categories only if admin
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -135,7 +135,7 @@ const CategoryManager = () => {
     }
   };
 
-  // ✅ Access control
+  // Access control
   if (!isAdmin) {
     return (
       <div className="p-6">

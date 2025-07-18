@@ -32,10 +32,10 @@ const AskQuestion = () => {
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success('✅ Question posted successfully');
+      toast.success(' Question posted successfully');
       setFormData({ title: '', description: '', category_id: '', language: '' });
     } catch (err) {
-      toast.error(err.response?.data?.message || '❌ Failed to post question');
+      toast.error(err.response?.data?.message || 'Failed to post question');
     }
   };
 
