@@ -7,12 +7,14 @@ import Swal from 'sweetalert2';
 
 const Questions = () => {
   const [questions, setQuestions] = useState([]);
+  const [allQuestions, setAllQuestions] = useState([]); // Store all questions for filtering
   const [usernames, setUsernames] = useState({});
   const [categories, setCategories] = useState({});
   const [filter, setFilter] = useState({
     status: 'all',
     category: 'all'
   });
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingQuestionId, setEditingQuestionId] = useState(null);
   const [editFormData, setEditFormData] = useState({
     title: '',
@@ -74,7 +76,8 @@ const Questions = () => {
         );
 
         setUsernames(nameMap);
-        setQuestions(qs);
+        setAllQuestions(qs); // Store all questions
+        setQuestions(qs); // Initially set filtered questions to all questions
       } catch (err) {
         toast.error("Failed to load questions");
       }
@@ -84,6 +87,21 @@ const Questions = () => {
       fetchQuestions();
     }
   }, [token, filter]);
+
+  // Apply search filter whenever searchTerm changes
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setQuestions(allQuestions);
+    } else {
+      const filtered = allQuestions.filter(q => 
+        q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        q.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (categories[q.category_id] && categories[q.category_id].toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (q.language && q.language.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setQuestions(filtered);
+    }
+  }, [searchTerm, allQuestions, categories]);
 
   const handleDelete = async (id) => {
     const result = await Swal.fire({
@@ -104,6 +122,7 @@ const Questions = () => {
         
         toast.success("Question deleted successfully!");
         setQuestions((prev) => prev.filter((q) => q.id !== id));
+        setAllQuestions((prev) => prev.filter((q) => q.id !== id));
         Swal.fire('Deleted!', 'Your question has been deleted.', 'success');
       } catch (err) {
         toast.error("Failed to delete question.");
@@ -121,6 +140,9 @@ const Questions = () => {
       
       toast.success(`Question marked as ${!currentStatus ? 'solved' : 'unsolved'}!`);
       setQuestions(prev => prev.map(q => 
+        q.id === questionId ? { ...q, is_solved: !currentStatus } : q
+      ));
+      setAllQuestions(prev => prev.map(q => 
         q.id === questionId ? { ...q, is_solved: !currentStatus } : q
       ));
     } catch (err) {
@@ -168,6 +190,9 @@ const Questions = () => {
       setQuestions(prev => prev.map(q => 
         q.id === questionId ? { ...q, ...editFormData } : q
       ));
+      setAllQuestions(prev => prev.map(q => 
+        q.id === questionId ? { ...q, ...editFormData } : q
+      ));
       setEditingQuestionId(null);
     } catch (err) {
       toast.error("Failed to update question.");
@@ -177,6 +202,17 @@ const Questions = () => {
   return (
     <div className="max-w-4xl mx-auto mt-10 px-4">
       <h1 className="text-3xl font-bold text-green-700 mb-6">All Questions</h1>
+      
+      {/* Search Bar */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search questions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+      </div>
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="flex flex-wrap gap-2">

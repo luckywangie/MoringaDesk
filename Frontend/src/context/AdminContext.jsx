@@ -12,12 +12,13 @@ export const AdminProvider = ({ children }) => {
   const [answersByQuestion, setAnswersByQuestion] = useState({});
   const [followupsByAnswer, setFollowupsByAnswer] = useState({});
   const [reports, setReports] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [users, setUsers] = useState([]);
+  const [faqs, setFaqs] = useState([]);
   const [userDetailsCache, setUserDetailsCache] = useState({});
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('questions');
+  const [questionDetailsCache, setQuestionDetailsCache] = useState({});
 
   const api = axios.create({
     baseURL: 'http://localhost:5000/api',
@@ -27,14 +28,38 @@ export const AdminProvider = ({ children }) => {
     }
   });
 
-  // Fetch all questions
+  // Fetch question details
+  const fetchQuestionDetails = async (questionId) => {
+    try {
+      const res = await api.get(`/questions/${questionId}`);
+      setQuestionDetailsCache(prev => ({
+        ...prev,
+        [questionId]: res.data
+      }));
+      return res.data;
+    } catch (error) {
+      console.error('Error fetching question details:', error);
+      return null;
+    }
+  };
+
+  // Fetch all questions with answers count
   const fetchQuestions = async () => {
     if (!user?.is_admin) return;
     
     try {
       setLoading(true);
       const res = await api.get('/questions');
-      setQuestions(res.data);
+      // Calculate answers count for each question
+      const questionsWithDetails = await Promise.all(res.data.map(async (question) => {
+        const questionDetails = await fetchQuestionDetails(question.id);
+        const answersRes = await api.get(`/questions/${question.id}/answers`);
+        return {
+          ...questionDetails,
+          answers_count: answersRes.data.length
+        };
+      }));
+      setQuestions(questionsWithDetails);
     } catch (error) {
       console.error('Error fetching questions:', error);
       if (error.response?.status === 401) {
@@ -74,6 +99,73 @@ export const AdminProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching followups:', error);
       toast.error('Failed to fetch followups');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch all FAQs
+  const fetchFaqs = async () => {
+    if (!user?.is_admin) return;
+    
+    try {
+      setLoading(true);
+      const res = await api.get('/faqs');
+      setFaqs(res.data);
+    } catch (error) {
+      console.error('Error fetching FAQs:', error);
+      toast.error('Failed to fetch FAQs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create FAQ
+  const createFaq = async (faqData) => {
+    try {
+      setLoading(true);
+      const res = await api.post('/faqs', faqData);
+      setFaqs(prev => [...prev, res.data.faq]);
+      toast.success('FAQ created successfully');
+      return true;
+    } catch (error) {
+      console.error('Error creating FAQ:', error);
+      toast.error(error.response?.data?.message || 'Failed to create FAQ');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update FAQ
+  const updateFaq = async (id, faqData) => {
+    try {
+      setLoading(true);
+      const res = await api.put(`/faqs/${id}`, faqData);
+      setFaqs(prev => prev.map(faq => 
+        faq.id === id ? res.data.faq : faq
+      ));
+      toast.success('FAQ updated successfully');
+      return true;
+    } catch (error) {
+      console.error('Error updating FAQ:', error);
+      toast.error(error.response?.data?.message || 'Failed to update FAQ');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete FAQ
+  const deleteFaq = async (id) => {
+    try {
+      setLoading(true);
+      await api.delete(`/faqs/${id}`);
+      setFaqs(prev => prev.filter(faq => faq.id !== id));
+      toast.success('FAQ deleted successfully');
+    } catch (error) {
+      console.error('Error deleting FAQ:', error);
+      toast.error('Failed to delete FAQ');
     } finally {
       setLoading(false);
     }
@@ -146,7 +238,13 @@ export const AdminProvider = ({ children }) => {
     try {
       setLoading(true);
       await api.put(`/answers/${answerId}/is_approved`, { is_approved: shouldApprove });
-      await fetchAnswersForQuestion(questionId);
+      // Update the answer in the state
+      setAnswersByQuestion(prev => ({
+        ...prev,
+        [questionId]: prev[questionId].map(answer => 
+          answer.id === answerId ? { ...answer, is_approved: shouldApprove } : answer
+        )
+      }));
       toast.success(`Answer ${shouldApprove ? 'approved' : 'unapproved'}!`);
     } catch (error) {
       console.error('Error toggling approval:', error);
@@ -206,7 +304,18 @@ export const AdminProvider = ({ children }) => {
     try {
       setLoading(true);
       const res = await api.get('/reports');
-      setReports(res.data);
+      // Fetch question details for each report
+      const reportsWithQuestions = await Promise.all(res.data.map(async report => {
+        let question = null;
+        if (report.question_id) {
+          question = questionDetailsCache[report.question_id] || await fetchQuestionDetails(report.question_id);
+        }
+        return {
+          ...report,
+          question
+        };
+      }));
+      setReports(reportsWithQuestions);
     } catch (error) {
       console.error('Error fetching reports:', error);
       toast.error('Failed to fetch reports');
@@ -215,13 +324,23 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  // Fetch categories
-  const fetchCategories = async () => {
+  // Create a report for a question
+  const createReport = async (questionId, categoryId, reason) => {
     try {
-      const res = await api.get('/categories');
-      setCategories(res.data);
+      setLoading(true);
+      const res = await api.post('/reports', {
+        question_id: questionId,
+        category_id: categoryId,
+        reason: reason
+      });
+      toast.success('Question reported successfully');
+      return true;
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error creating report:', error);
+      toast.error(error.response?.data?.message || 'Failed to report question');
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -310,9 +429,9 @@ export const AdminProvider = ({ children }) => {
     if (user?.is_admin) {
       fetchQuestions();
       fetchReports();
-      fetchCategories();
       fetchNotifications();
       fetchUsers();
+      fetchFaqs();
     }
   }, [user]);
 
@@ -323,9 +442,9 @@ export const AdminProvider = ({ children }) => {
         answersByQuestion,
         followupsByAnswer,
         reports,
-        categories,
         notifications,
         users,
+        faqs,
         userDetailsCache,
         loading,
         activeTab,
@@ -335,10 +454,15 @@ export const AdminProvider = ({ children }) => {
         fetchFollowupsForAnswer,
         fetchNotifications,
         fetchUsers,
+        fetchFaqs,
+        createFaq,
+        updateFaq,
+        deleteFaq,
         getUserDetails,
         toggleAnswerApproval,
         createFollowup,
         deleteFollowup,
+        createReport,
         deleteReport,
         deleteQuestion,
         deleteNotification,

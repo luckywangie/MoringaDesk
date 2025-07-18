@@ -43,23 +43,160 @@ const FollowupForm = ({ answerId, onFollowupCreated }) => {
   );
 };
 
+const ReportForm = ({ questionId, onReportSubmit, onCancel }) => {
+  const { loading } = useAdmin();
+  const [reason, setReason] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!reason.trim() || !categoryId) return;
+    
+    const success = await onReportSubmit(questionId, categoryId, reason);
+    if (success) {
+      setReason('');
+      setCategoryId('');
+    }
+  };
+
+  return (
+    <div className="mt-3 p-3 bg-gray-50 rounded border border-gray-200">
+      <h4 className="font-medium text-gray-700 mb-2">Report Question</h4>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-2">
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md text-sm text-black"
+            required
+          >
+            <option value="" className="text-gray-500">Select a category</option>
+            <option value="1" className="text-black">Inappropriate Content</option>
+            <option value="2" className="text-black">Spam</option>
+            <option value="3" className="text-black">Duplicate Question</option>
+            <option value="4" className="text-black">Other</option>
+          </select>
+        </div>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Reason for reporting..."
+          className="w-full p-2 border border-gray-300 rounded-md text-sm text-black"
+          rows={2}
+          required
+        />
+        <div className="flex justify-end space-x-2 mt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-3 py-1 bg-emerald-600 text-white rounded-md text-sm disabled:opacity-50"
+          >
+            {loading ? 'Reporting...' : 'Submit Report'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+const FaqForm = ({ faq, onCancel, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    question: faq?.question || '',
+    answer: faq?.answer || ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="question">
+            Question
+          </label>
+          <input
+            type="text"
+            id="question"
+            name="question"
+            value={formData.question}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="answer">
+            Answer
+          </label>
+          <textarea
+            id="answer"
+            name="answer"
+            value={formData.answer}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            rows="4"
+            required
+          />
+        </div>
+        <div className="flex justify-end space-x-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            {faq ? 'Update' : 'Create'} FAQ
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 const Admin = () => {
   const {
     questions,
     answersByQuestion,
     followupsByAnswer,
     reports,
-    categories,
     notifications,
     users,
+    faqs,
     userDetailsCache,
     loading,
     activeTab,
     setActiveTab,
     fetchAnswersForQuestion,
     fetchFollowupsForAnswer,
+    fetchFaqs,
+    createFaq,
+    updateFaq,
+    deleteFaq,
     deleteFollowup,
     toggleAnswerApproval,
+    createReport,
     deleteReport,
     deleteQuestion,
     deleteNotification,
@@ -73,6 +210,9 @@ const Admin = () => {
   const [activeQuestionId, setActiveQuestionId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedFollowups, setExpandedFollowups] = useState({});
+  const [editingFaq, setEditingFaq] = useState(null);
+  const [showFaqForm, setShowFaqForm] = useState(false);
+  const [showReportForm, setShowReportForm] = useState(null);
 
   const toggleAnswers = (questionId) => {
     if (activeQuestionId === questionId) {
@@ -93,6 +233,36 @@ const Admin = () => {
     }
   };
 
+  const handleCreateFaq = async (faqData) => {
+    const success = await createFaq(faqData);
+    if (success) {
+      setShowFaqForm(false);
+      fetchFaqs();
+    }
+  };
+
+  const handleUpdateFaq = async (faqData) => {
+    const success = await updateFaq(editingFaq.id, faqData);
+    if (success) {
+      setEditingFaq(null);
+      fetchFaqs();
+    }
+  };
+
+  const handleDeleteFaq = async (id) => {
+    if (window.confirm('Are you sure you want to delete this FAQ?')) {
+      await deleteFaq(id);
+    }
+  };
+
+  const handleReportSubmit = async (questionId, categoryId, reason) => {
+    const success = await createReport(questionId, categoryId, reason);
+    if (success) {
+      setShowReportForm(null);
+    }
+    return success;
+  };
+
   const filteredQuestions = questions.filter(q =>
     q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     q.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -111,6 +281,11 @@ const Admin = () => {
   const filteredUsers = users.filter(u =>
     u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredFaqs = faqs.filter(faq =>
+    faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getUserName = (userId) => {
@@ -200,6 +375,12 @@ const Admin = () => {
             >
               Users ({users.length})
             </button>
+            <button
+              className={`py-2 px-4 font-medium ${activeTab === 'faqs' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-emerald-500'}`}
+              onClick={() => setActiveTab('faqs')}
+            >
+              FAQs ({faqs.length})
+            </button>
           </div>
           <div className="w-full md:w-64">
             <input
@@ -234,9 +415,6 @@ const Admin = () => {
                           Asked by: {getUserName(question.user_id)} • {new Date(question.created_at).toLocaleString()}
                         </p>
                       </div>
-                      <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full">
-                        {categories.find(c => c.id === question.category_id)?.name || 'Uncategorized'}
-                      </span>
                     </div>
                     
                     <div className="mt-4 flex justify-between items-center">
@@ -264,13 +442,29 @@ const Admin = () => {
                         )}
                       </button>
                       
-                      <button
-                        className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-sm"
-                        onClick={() => deleteQuestion(question.id)}
-                      >
-                        Delete Question
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-sm"
+                          onClick={() => deleteQuestion(question.id)}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-md hover:bg-emerald-200 transition-colors text-sm"
+                          onClick={() => setShowReportForm(showReportForm === question.id ? null : question.id)}
+                        >
+                          Report
+                        </button>
+                      </div>
                     </div>
+
+                    {showReportForm === question.id && (
+                      <ReportForm
+                        questionId={question.id}
+                        onReportSubmit={handleReportSubmit}
+                        onCancel={() => setShowReportForm(null)}
+                      />
+                    )}
 
                     {activeQuestionId === question.id && (
                       <div className="mt-4 space-y-3">
@@ -391,22 +585,18 @@ const Admin = () => {
                           <p>Date: {new Date(report.created_at).toLocaleString()}</p>
                         </div>
                       </div>
-                      <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                        {categories.find(c => c.id === report.category_id)?.name || 'No category'}
-                      </span>
                     </div>
                     
-                    <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
-                      <h4 className="font-medium text-gray-700 mb-1">Related Question:</h4>
-                      {report.question ? (
-                        <>
-                          <p className="text-gray-800 font-medium">{report.question.title}</p>
-                          <p className="text-gray-600 text-sm mt-1">{report.question.description}</p>
-                        </>
-                      ) : (
-                        <p className="text-gray-600">Question not found or already deleted</p>
-                      )}
-                    </div>
+                    {report.question && (
+                      <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
+                        <h4 className="font-medium text-gray-700 mb-1">Related Question:</h4>
+                        <p className="text-gray-800 font-medium">{report.question.title}</p>
+                        <p className="text-gray-600 text-sm mt-1">{report.question.description}</p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Language: {report.question.language} • {new Date(report.question.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="mt-4 flex justify-end space-x-2">
                       <button
@@ -440,9 +630,6 @@ const Admin = () => {
                           <p>Date: {new Date(notification.created_at).toLocaleString()}</p>
                         </div>
                       </div>
-                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                        {notification.notification_type}
-                      </span>
                     </div>
 
                     <div className="mt-4 flex justify-end space-x-2">
@@ -458,7 +645,7 @@ const Admin = () => {
               ))
             )}
           </div>
-        ) : (
+        ) : activeTab === 'users' ? (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -508,6 +695,72 @@ const Admin = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-emerald-800">Frequently Asked Questions</h3>
+              <button
+                onClick={() => {
+                  setEditingFaq(null);
+                  setShowFaqForm(true);
+                }}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+              >
+                Add New FAQ
+              </button>
+            </div>
+
+            {showFaqForm && (
+              <FaqForm
+                faq={editingFaq}
+                onCancel={() => {
+                  setShowFaqForm(false);
+                  setEditingFaq(null);
+                }}
+                onSubmit={editingFaq ? handleUpdateFaq : handleCreateFaq}
+              />
+            )}
+
+            {filteredFaqs.length === 0 ? (
+              <div className="bg-white p-6 rounded-lg shadow text-center">
+                <p className="text-gray-600">No FAQs found</p>
+              </div>
+            ) : (
+              filteredFaqs.map((faq) => (
+                <div key={faq.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-emerald-100">
+                  <div className="p-5">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold text-emerald-800">{faq.question}</h3>
+                        <p className="text-gray-600 mt-2 whitespace-pre-line">{faq.answer}</p>
+                        <p className="text-sm text-gray-500 mt-2">
+                          Created by: {getUserName(faq.created_by)} • {new Date(faq.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 flex justify-end space-x-2">
+                      <button
+                        className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-md hover:bg-emerald-200 transition-colors text-sm"
+                        onClick={() => {
+                          setEditingFaq(faq);
+                          setShowFaqForm(true);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-sm"
+                        onClick={() => handleDeleteFaq(faq.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
