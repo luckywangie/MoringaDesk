@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Google Login Handler
+  //  Google Login Handler
   const google_login_user = async (googleToken) => {
     try {
       const res = await fetch('http://127.0.0.1:5000/api/auth/google-login', {
@@ -180,7 +180,7 @@ export const AuthProvider = ({ children }) => {
         register,
         updateProfile,
         deleteProfile,
-        google_login_user, // ✅ Make available to Signup.jsx
+        google_login_user, 
         setUser,
         setToken,
       }}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -10,14 +10,26 @@ const AskQuestion = () => {
     category_id: '',
     language: ''
   });
-
-  // Predefined categories
-  const categories = [
-    { id: 1, name: 'Softskills' },
-    { id: 2, name: 'Technical' }
-  ];
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem('token');
+
+  // Fetch categories from backend when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/categories');
+        setCategories(res.data);
+      } catch (err) {
+        toast.error('Failed to load categories');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,18 +38,34 @@ const AskQuestion = () => {
   const handleSubmit = async e => {
     e.preventDefault();
 
+    // Validate category is selected
+    if (!formData.category_id) {
+      toast.error('Please select a category');
+      return;
+    }
+
     try {
       const res = await axios.post(
         'http://localhost:5000/api/questions',
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success(' Question posted successfully');
+      toast.success('Question posted successfully');
       setFormData({ title: '', description: '', category_id: '', language: '' });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to post question');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg">Loading categories...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -83,7 +111,7 @@ const AskQuestion = () => {
             >
               <option value="">-- Select Category --</option>
               {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                <option key={cat.id} value={cat.id}>{cat.category_name}</option>
               ))}
             </select>
           </div>
@@ -96,7 +124,7 @@ const AskQuestion = () => {
               value={formData.language}
               onChange={handleChange}
               className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
-              placeholder="e.g., English, Swahili"
+              placeholder="e.g., JavaScript, Python"
               required
             />
           </div>

@@ -1,601 +1,516 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { toast, ToastContainer } from 'react-toastify';
+import React, { useState, useEffect } from 'react';
+import { useAdmin } from '../context/AdminContext';
+import { useUser } from '../context/UserContext';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 
-const Admin = () => {
-  const [answers, setAnswers] = useState([]);
-  const [faqs, setFaqs] = useState([]);
-  const [reports, setReports] = useState([]);
-  const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
-  const [editingFaqId, setEditingFaqId] = useState(null);
-  const [editFaq, setEditFaq] = useState({ question: '', answer: '' });
-  const [editingReportId, setEditingReportId] = useState(null);
-  const [editReport, setEditReport] = useState({ reason: '', category_id: '' });
-  const [categories, setCategories] = useState([]);
+const FollowupForm = ({ answerId, onFollowupCreated }) => {
+  const [content, setContent] = useState('');
+  const { createFollowup, loading } = useAdmin();
 
-  const [loading, setLoading] = useState({
-    answers: false,
-    faqs: false,
-    reports: false,
-    operations: false,
-    users: {},
-    questions: {},
-    categories: false
-  });
-
-  const [error, setError] = useState({
-    answers: null,
-    faqs: null,
-    reports: null,
-    operations: null
-  });
-
-  const token = localStorage.getItem('token');
-
-  useEffect(() => {
-    fetchAnswers();
-    fetchFaqs();
-    fetchReports();
-    fetchCategories();
-  }, []);
-
-  const fetchAnswers = async () => {
-    setLoading(prev => ({ ...prev, answers: true }));
-    setError(prev => ({ ...prev, answers: null }));
-    try {
-      const res = await axios.get('http://localhost:5000/api/answers/unapproved');
-      setAnswers(res.data);
-    } catch (err) {
-      setError(prev => ({ ...prev, answers: err.response?.data?.message || 'Failed to fetch answers' }));
-      toast.error(err.response?.data?.message || 'Failed to fetch answers');
-    } finally {
-      setLoading(prev => ({ ...prev, answers: false }));
-    }
-  };
-
-  const fetchFaqs = async () => {
-    setLoading(prev => ({ ...prev, faqs: true }));
-    setError(prev => ({ ...prev, faqs: null }));
-    try {
-      const res = await axios.get('http://localhost:5000/api/faqs');
-      setFaqs(res.data);
-    } catch (err) {
-      setError(prev => ({ ...prev, faqs: err.response?.data?.message || 'Failed to fetch FAQs' }));
-      toast.error(err.response?.data?.message || 'Failed to fetch FAQs');
-    } finally {
-      setLoading(prev => ({ ...prev, faqs: false }));
-    }
-  };
-
-  const fetchReports = async () => {
-    setLoading(prev => ({ ...prev, reports: true }));
-    setError(prev => ({ ...prev, reports: null }));
-    try {
-      const res = await axios.get('http://localhost:5000/api/reports', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setReports(res.data);
-    } catch (err) {
-      setError(prev => ({ ...prev, reports: err.response?.data?.message || 'Failed to fetch reports' }));
-      toast.error(err.response?.data?.message || 'Failed to fetch reports');
-    } finally {
-      setLoading(prev => ({ ...prev, reports: false }));
-    }
-  };
-
-  const fetchCategories = async () => {
-    setLoading(prev => ({ ...prev, categories: true }));
-    try {
-      const res = await axios.get('http://localhost:5000/api/categories');
-      setCategories(res.data);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to fetch categories');
-    } finally {
-      setLoading(prev => ({ ...prev, categories: false }));
-    }
-  };
-
-  const fetchUserDetails = async (userId) => {
-    if (loading.users[userId] || !userId) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!content.trim()) return;
     
-    setLoading(prev => ({
-      ...prev,
-      users: { ...prev.users, [userId]: true }
-    }));
-    
-    try {
-      const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setReports(prev => prev.map(report => 
-        report.user_id === userId 
-          ? { ...report, username: res.data.username } 
-          : report
-      ));
-    } catch (err) {
-      toast.error(`Failed to fetch user ${userId}: ${err.response?.data?.message || err.message}`);
-    } finally {
-      setLoading(prev => ({
-        ...prev,
-        users: { ...prev.users, [userId]: false }
-      }));
+    const success = await createFollowup(answerId, content);
+    if (success) {
+      setContent('');
+      onFollowupCreated && onFollowupCreated();
     }
-  };
-
-  const fetchQuestionDetails = async (questionId) => {
-    if (loading.questions[questionId] || !questionId) return;
-    
-    setLoading(prev => ({
-      ...prev,
-      questions: { ...prev.questions, [questionId]: true }
-    }));
-    
-    try {
-      const res = await axios.get(`http://localhost:5000/api/questions/${questionId}`);
-      
-      setReports(prev => prev.map(report => 
-        report.question_id === questionId 
-          ? { ...report, question_title: res.data.title, question_description: res.data.description } 
-          : report
-      ));
-    } catch (err) {
-      toast.error(`Failed to fetch question ${questionId}: ${err.response?.data?.message || err.message}`);
-    } finally {
-      setLoading(prev => ({
-        ...prev,
-        questions: { ...prev.questions, [questionId]: false }
-      }));
-    }
-  };
-
-  const handleApprove = async (answerId) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'You are about to approve this answer',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, approve it!'
-    });
-
-    if (!result.isConfirmed) return;
-
-    setLoading(prev => ({ ...prev, operations: true }));
-    setError(prev => ({ ...prev, operations: null }));
-    try {
-      const res = await axios.put(
-        `http://localhost:5000/api/answers/${answerId}/approve`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success(res.data.message);
-      fetchAnswers();
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Error approving answer';
-      setError(prev => ({ ...prev, operations: errorMsg }));
-      toast.error(errorMsg);
-    } finally {
-      setLoading(prev => ({ ...prev, operations: false }));
-    }
-  };
-
-  const handleCreateFaq = async () => {
-    if (!newFaq.question.trim() || !newFaq.answer.trim()) {
-      toast.error('Both question and answer are required');
-      return;
-    }
-    setLoading(prev => ({ ...prev, operations: true }));
-    setError(prev => ({ ...prev, operations: null }));
-    try {
-      const res = await axios.post('http://localhost:5000/api/faqs', newFaq, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success(res.data.message);
-      setNewFaq({ question: '', answer: '' });
-      fetchFaqs();
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Error creating FAQ';
-      setError(prev => ({ ...prev, operations: errorMsg }));
-      toast.error(errorMsg);
-    } finally {
-      setLoading(prev => ({ ...prev, operations: false }));
-    }
-  };
-
-  const handleEditFaq = (faq) => {
-    setEditingFaqId(faq.id);
-    setEditFaq({ question: faq.question, answer: faq.answer });
-  };
-
-  const handleUpdateFaq = async (id) => {
-    if (!editFaq.question.trim() || !editFaq.answer.trim()) {
-      toast.error('Both question and answer are required');
-      return;
-    }
-    setLoading(prev => ({ ...prev, operations: true }));
-    setError(prev => ({ ...prev, operations: null }));
-    try {
-      const res = await axios.put(
-        `http://localhost:5000/api/faqs/${id}`,
-        editFaq,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success(res.data.message);
-      setEditingFaqId(null);
-      fetchFaqs();
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Error updating FAQ';
-      setError(prev => ({ ...prev, operations: errorMsg }));
-      toast.error(errorMsg);
-    } finally {
-      setLoading(prev => ({ ...prev, operations: false }));
-    }
-  };
-
-  const handleDeleteFaq = async (id) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'You won\'t be able to revert this!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!'
-    });
-
-    if (!result.isConfirmed) return;
-
-    setLoading(prev => ({ ...prev, operations: true }));
-    setError(prev => ({ ...prev, operations: null }));
-    try {
-      const res = await axios.delete(`http://localhost:5000/api/faqs/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success(res.data.message);
-      fetchFaqs();
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Error deleting FAQ';
-      setError(prev => ({ ...prev, operations: errorMsg }));
-      toast.error(errorMsg);
-    } finally {
-      setLoading(prev => ({ ...prev, operations: false }));
-    }
-  };
-
-  const handleEditReport = (report) => {
-    setEditingReportId(report.id);
-    setEditReport({ 
-      reason: report.reason, 
-      category_id: report.category_id 
-    });
-  };
-
-  const handleUpdateReport = async (id) => {
-    if (!editReport.reason.trim()) {
-      toast.error('Reason is required');
-      return;
-    }
-    
-    setLoading(prev => ({ ...prev, operations: true }));
-    setError(prev => ({ ...prev, operations: null }));
-    
-    try {
-      const res = await axios.put(
-        `http://localhost:5000/api/reports/${id}`,
-        editReport,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      toast.success(res.data.message);
-      setEditingReportId(null);
-      fetchReports();
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Error updating report';
-      setError(prev => ({ ...prev, operations: errorMsg }));
-      toast.error(errorMsg);
-    } finally {
-      setLoading(prev => ({ ...prev, operations: false }));
-    }
-  };
-
-  const handleDeleteReport = async (id) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'You won\'t be able to revert this!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!'
-    });
-
-    if (!result.isConfirmed) return;
-
-    setLoading(prev => ({ ...prev, operations: true }));
-    setError(prev => ({ ...prev, operations: null }));
-    
-    try {
-      const res = await axios.delete(`http://localhost:5000/api/reports/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      toast.success(res.data.message);
-      fetchReports();
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Error deleting report';
-      setError(prev => ({ ...prev, operations: errorMsg }));
-      toast.error(errorMsg);
-    } finally {
-      setLoading(prev => ({ ...prev, operations: false }));
-    }
-  };
-
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : categoryId;
   };
 
   return (
-    <div className="p-6 space-y-8 max-w-5xl mx-auto">
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+    <form onSubmit={handleSubmit} className="mt-3">
+      <div className="flex items-start">
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Add a follow-up question..."
+          className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200"
+          rows={2}
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          disabled={loading || !content.trim()}
+          className="ml-2 px-3 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors text-sm disabled:opacity-50"
+        >
+          {loading ? 'Posting...' : 'Post'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+const Admin = () => {
+  const {
+    questions,
+    answersByQuestion,
+    followupsByAnswer,
+    reports,
+    categories,
+    notifications,
+    users,
+    userDetailsCache,
+    loading,
+    activeTab,
+    setActiveTab,
+    fetchAnswersForQuestion,
+    fetchFollowupsForAnswer,
+    deleteFollowup,
+    toggleAnswerApproval,
+    deleteReport,
+    deleteQuestion,
+    deleteNotification,
+    getUserDetails,
+    updateUserAdminStatus,
+    deleteUser
+  } = useAdmin();
+  
+  const { user, logout } = useUser();
+  const navigate = useNavigate();
+  const [activeQuestionId, setActiveQuestionId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedFollowups, setExpandedFollowups] = useState({});
+
+  const toggleAnswers = (questionId) => {
+    if (activeQuestionId === questionId) {
+      setActiveQuestionId(null);
+    } else {
+      setActiveQuestionId(questionId);
+      fetchAnswersForQuestion(questionId);
+    }
+  };
+
+  const toggleFollowups = (answerId) => {
+    setExpandedFollowups(prev => ({
+      ...prev,
+      [answerId]: !prev[answerId]
+    }));
+    if (!followupsByAnswer[answerId]) {
+      fetchFollowupsForAnswer(answerId);
+    }
+  };
+
+  const filteredQuestions = questions.filter(q =>
+    q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    q.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredReports = reports.filter(r =>
+    r.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (r.question?.title && r.question.title.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const filteredNotifications = notifications.filter(n =>
+    n.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (userDetailsCache[n.user_id]?.username.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const filteredUsers = users.filter(u =>
+    u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getUserName = (userId) => {
+    return userDetailsCache[userId]?.username || 'Loading...';
+  };
+
+  useEffect(() => {
+    notifications.forEach(n => {
+      if (!userDetailsCache[n.user_id]) {
+        getUserDetails(n.user_id);
+      }
+    });
+  }, [notifications]);
+
+  if (!user?.is_admin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-emerald-50">
+        <div className="bg-white p-8 rounded-lg shadow-md w-96 text-center">
+          <h2 className="text-2xl font-bold text-emerald-800 mb-4">Admin Access Required</h2>
+          <p className="text-gray-600 mb-6">You don't have permission to access this page.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full bg-emerald-600 text-white py-2 rounded-md hover:bg-emerald-700 transition-colors"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 min-h-screen bg-emerald-50">
+      <ToastContainer />
       
-      {/* Unapproved Answers */}
-      <section className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-2xl font-bold mb-4">Unapproved Answers</h2>
-        {loading.answers ? (
-          <div className="text-center py-4">Loading answers...</div>
-        ) : error.answers ? (
-          <div className="text-red-500 p-2 bg-red-50 rounded">{error.answers}</div>
-        ) : answers.length === 0 ? (
-          <p className="text-gray-500">No unapproved answers.</p>
-        ) : (
-          <div className="space-y-3">
-            {answers.map(answer => (
-              <div key={answer.id} className="border border-gray-200 p-4 rounded-lg hover:bg-gray-50">
-                <p className="font-semibold text-gray-800">Q: {answer.question.content}</p>
-                <p className="mt-1 text-gray-700">A: {answer.content}</p>
-                <div className="mt-3">
-                  <button
-                    onClick={() => handleApprove(answer.id)}
-                    disabled={loading.operations}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
-                  >
-                    {loading.operations ? 'Processing...' : 'Approve Answer'}
-                  </button>
-                </div>
-              </div>
-            ))}
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-emerald-800">Admin Dashboard</h2>
+          <button
+            onClick={logout}
+            className="bg-red-100 text-red-800 px-4 py-2 rounded-md hover:bg-red-200 transition-colors flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+            </svg>
+            Logout
+          </button>
+        </div>
+
+        <div className="mb-6 bg-white rounded-lg shadow p-4">
+          <div className="flex items-center">
+            <div className="bg-emerald-100 p-3 rounded-full mr-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-emerald-800 font-medium">Welcome, {user?.username || 'Admin'}!</p>
+              <p className="text-gray-600 text-sm">Administrator Dashboard</p>
+            </div>
           </div>
-        )}
-      </section>
+        </div>
 
-      {/* FAQ Management */}
-      <section className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-2xl font-bold mb-6">Manage FAQs</h2>
-
-        {/* Create FAQ */}
-        <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold text-lg mb-3">Create New FAQ</h3>
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Question"
-              value={newFaq.question}
-              onChange={e => setNewFaq({ ...newFaq, question: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded"
-            />
-            <textarea
-              placeholder="Answer"
-              value={newFaq.answer}
-              onChange={e => setNewFaq({ ...newFaq, answer: e.target.value })}
-              rows={3}
-              className="w-full p-2 border border-gray-300 rounded"
-            />
+        <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
+          <div className="flex border-b border-gray-200">
             <button
-              onClick={handleCreateFaq}
-              disabled={loading.operations}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
+              className={`py-2 px-4 font-medium ${activeTab === 'questions' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-emerald-500'}`}
+              onClick={() => setActiveTab('questions')}
             >
-              {loading.operations ? 'Creating...' : 'Create FAQ'}
+              Questions ({questions.length})
+            </button>
+            <button
+              className={`py-2 px-4 font-medium ${activeTab === 'reports' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-emerald-500'}`}
+              onClick={() => setActiveTab('reports')}
+            >
+              Reports ({reports.length})
+            </button>
+            <button
+              className={`py-2 px-4 font-medium ${activeTab === 'notifications' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-emerald-500'}`}
+              onClick={() => setActiveTab('notifications')}
+            >
+              Notifications ({notifications.length})
+            </button>
+            <button
+              className={`py-2 px-4 font-medium ${activeTab === 'users' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-emerald-500'}`}
+              onClick={() => setActiveTab('users')}
+            >
+              Users ({users.length})
             </button>
           </div>
+          <div className="w-full md:w-64">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* FAQ List */}
-        <div>
-          <h3 className="font-semibold text-lg mb-3">Existing FAQs</h3>
-          {loading.faqs ? (
-            <div className="text-center py-4">Loading FAQs...</div>
-          ) : error.faqs ? (
-            <div className="text-red-500 p-2 bg-red-50 rounded">{error.faqs}</div>
-          ) : faqs.length === 0 ? (
-            <p className="text-gray-500">No FAQs available.</p>
-          ) : (
-            <div className="space-y-4">
-              {faqs.map(faq => (
-                <div key={faq.id} className="border border-gray-200 p-4 rounded-lg">
-                  {editingFaqId === faq.id ? (
-                    <div className="space-y-3">
-                      <input
-                        value={editFaq.question}
-                        onChange={e => setEditFaq({ ...editFaq, question: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded"
-                      />
-                      <textarea
-                        value={editFaq.answer}
-                        onChange={e => setEditFaq({ ...editFaq, answer: e.target.value })}
-                        rows={3}
-                        className="w-full p-2 border border-gray-300 rounded"
-                      />
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleUpdateFaq(faq.id)}
-                          disabled={loading.operations}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-                        >
-                          Save Changes
-                        </button>
-                        <button
-                          onClick={() => setEditingFaqId(null)}
-                          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
-                        >
-                          Cancel
-                        </button>
+        {loading ? (
+          <div className="flex justify-center my-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+          </div>
+        ) : activeTab === 'questions' ? (
+          <div className="space-y-4">
+            {filteredQuestions.length === 0 ? (
+              <div className="bg-white p-6 rounded-lg shadow text-center">
+                <p className="text-gray-600">No questions found</p>
+              </div>
+            ) : (
+              filteredQuestions.map((question) => (
+                <div key={question.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-emerald-100">
+                  <div className="p-5">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-semibold text-emerald-800">{question.title}</h3>
+                        <p className="text-gray-600 mt-1">{question.description}</p>
+                        <p className="text-sm text-gray-500 mt-2">
+                          Asked by: {getUserName(question.user_id)} • {new Date(question.created_at).toLocaleString()}
+                        </p>
                       </div>
+                      <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full">
+                        {categories.find(c => c.id === question.category_id)?.name || 'Uncategorized'}
+                      </span>
                     </div>
-                  ) : (
-                    <>
-                      <p className="font-semibold text-gray-800">Q: {faq.question}</p>
-                      <p className="mt-1 text-gray-700">A: {faq.answer}</p>
-                      <div className="mt-3 flex space-x-2">
-                        <button
-                          onClick={() => handleEditFaq(faq)}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteFaq(faq.id)}
-                          disabled={loading.operations}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+                    
+                    <div className="mt-4 flex justify-between items-center">
+                      <button
+                        className={`px-4 py-2 rounded-md font-medium flex items-center ${activeQuestionId === question.id ? 
+                          'bg-emerald-700 text-white hover:bg-emerald-800' : 
+                          'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                        }`}
+                        onClick={() => toggleAnswers(question.id)}
+                      >
+                        {activeQuestionId === question.id ? (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                            Hide Answers
+                          </>
+                        ) : (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                            Show Answers ({question.answers_count || 0})
+                          </>
+                        )}
+                      </button>
+                      
+                      <button
+                        className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-sm"
+                        onClick={() => deleteQuestion(question.id)}
+                      >
+                        Delete Question
+                      </button>
+                    </div>
 
-      {/* Enhanced Reports Section */}
-      <section className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-2xl font-bold mb-4">User Reports</h2>
-        {loading.reports ? (
-          <div className="text-center py-4">Loading reports...</div>
-        ) : error.reports ? (
-          <div className="text-red-500 p-2 bg-red-50 rounded">{error.reports}</div>
-        ) : reports.length === 0 ? (
-          <p className="text-gray-500">No reports found.</p>
+                    {activeQuestionId === question.id && (
+                      <div className="mt-4 space-y-3">
+                        {answersByQuestion[question.id]?.length > 0 ? (
+                          answersByQuestion[question.id].map((ans) => (
+                            <div key={ans.id} className="p-4 bg-gray-50 rounded border border-gray-100">
+                              <p className="text-gray-800">{ans.content}</p>
+                              <div className="mt-3 flex justify-between items-center">
+                                <span className="text-sm text-gray-500">
+                                  Answered by: {getUserName(ans.user_id)} • {new Date(ans.created_at).toLocaleString()}
+                                </span>
+                                <div>
+                                  {ans.is_approved ? (
+                                    <button
+                                      className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors"
+                                      onClick={() => toggleAnswerApproval(ans.id, question.id, false)}
+                                      disabled={loading}
+                                    >
+                                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                      {loading ? 'Updating...' : 'Unapprove'}
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors"
+                                      onClick={() => toggleAnswerApproval(ans.id, question.id, true)}
+                                      disabled={loading}
+                                    >
+                                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                      {loading ? 'Approving...' : 'Approve'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="mt-4">
+                                <button
+                                  onClick={() => toggleFollowups(ans.id)}
+                                  className="text-sm text-emerald-600 hover:text-emerald-800 flex items-center"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                  </svg>
+                                  {expandedFollowups[ans.id] ? 'Hide Follow-ups' : 'Show Follow-ups'} 
+                                  {followupsByAnswer[ans.id]?.length > 0 && (
+                                    <span className="ml-1 text-gray-500">({followupsByAnswer[ans.id].length})</span>
+                                  )}
+                                </button>
+                                
+                                {expandedFollowups[ans.id] && (
+                                  <div className="mt-2 ml-4 pl-4 border-l-2 border-emerald-200">
+                                    <FollowupForm 
+                                      answerId={ans.id} 
+                                      onFollowupCreated={() => fetchFollowupsForAnswer(ans.id)}
+                                    />
+                                    
+                                    {followupsByAnswer[ans.id]?.length > 0 ? (
+                                      followupsByAnswer[ans.id].map(followup => (
+                                        <div key={followup.id} className="p-3 my-2 bg-white rounded shadow-sm">
+                                          <p className="text-gray-700">{followup.content}</p>
+                                          <div className="flex justify-between items-center mt-2">
+                                            <span className="text-xs text-gray-500">
+                                              By: {getUserName(followup.user_id)} • {new Date(followup.created_at).toLocaleString()}
+                                            </span>
+                                            <button
+                                              onClick={() => deleteFollowup(followup.id, ans.id)}
+                                              className="text-xs text-red-600 hover:text-red-800"
+                                            >
+                                              Delete
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="p-2 text-sm text-gray-500">
+                                        No follow-ups yet
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 bg-emerald-50 rounded border border-emerald-100 text-emerald-700 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            No answers yet
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : activeTab === 'reports' ? (
+          <div className="space-y-4">
+            {filteredReports.length === 0 ? (
+              <div className="bg-white p-6 rounded-lg shadow text-center">
+                <p className="text-gray-600">No reports found</p>
+              </div>
+            ) : (
+              filteredReports.map((report) => (
+                <div key={report.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-red-100">
+                  <div className="p-5">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800">Report #{report.id}</h3>
+                        <p className="text-gray-600 mt-1">{report.reason}</p>
+                        <div className="mt-2 text-sm text-gray-500">
+                          <p>Reported by: {getUserName(report.user_id)}</p>
+                          <p>Date: {new Date(report.created_at).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                        {categories.find(c => c.id === report.category_id)?.name || 'No category'}
+                      </span>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
+                      <h4 className="font-medium text-gray-700 mb-1">Related Question:</h4>
+                      {report.question ? (
+                        <>
+                          <p className="text-gray-800 font-medium">{report.question.title}</p>
+                          <p className="text-gray-600 text-sm mt-1">{report.question.description}</p>
+                        </>
+                      ) : (
+                        <p className="text-gray-600">Question not found or already deleted</p>
+                      )}
+                    </div>
+
+                    <div className="mt-4 flex justify-end space-x-2">
+                      <button
+                        className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-sm"
+                        onClick={() => deleteReport(report.id)}
+                      >
+                        Delete Report
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : activeTab === 'notifications' ? (
+          <div className="space-y-4">
+            {filteredNotifications.length === 0 ? (
+              <div className="bg-white p-6 rounded-lg shadow text-center">
+                <p className="text-gray-600">No notifications found</p>
+              </div>
+            ) : (
+              filteredNotifications.map((notification) => (
+                <div key={notification.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-blue-100">
+                  <div className="p-5">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold text-blue-800">Notification #{notification.id}</h3>
+                        <p className="text-gray-600 mt-1">{notification.message}</p>
+                        <div className="mt-2 text-sm text-gray-500">
+                          <p>From: {getUserName(notification.user_id)}</p>
+                          <p>Date: {new Date(notification.created_at).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                        {notification.notification_type}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex justify-end space-x-2">
+                      <button
+                        className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-sm"
+                        onClick={() => deleteNotification(notification.id)}
+                      >
+                        Delete Notification
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm text-left border">
-              <thead className="bg-gray-100 text-xs uppercase">
-                <tr>
-                  <th className="px-4 py-2 border">ID</th>
-                  <th className="px-4 py-2 border">User</th>
-                  <th className="px-4 py-2 border">Question</th>
-                  <th className="px-4 py-2 border">Category</th>
-                  <th className="px-4 py-2 border">Reason</th>
-                  <th className="px-4 py-2 border">Created At</th>
-                  <th className="px-4 py-2 border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map(report => {
-                  // Fetch user details if not already loaded
-                  if (report.user_id && !report.username) {
-                    fetchUserDetails(report.user_id);
-                  }
-                  
-                  // Fetch question details if not already loaded
-                  if (report.question_id && !report.question_description) {
-                    fetchQuestionDetails(report.question_id);
-                  }
-                  
-                  return (
-                    <tr key={report.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 border">{report.id}</td>
-                      <td className="px-4 py-2 border">
-                        {report.username || 
-                          (loading.users[report.user_id] ? 'Loading...' : `User ${report.user_id}`)}
-                      </td>
-                      <td className="px-4 py-2 border">
-                        {report.question_title ? (
-                          <div title={report.question_description}>
-                            {report.question_title.substring(0, 30)}
-                            {report.question_title.length > 30 ? '...' : ''}
-                          </div>
-                        ) : (
-                          loading.questions[report.question_id] ? 'Loading...' : `Question ${report.question_id}`
-                        )}
-                      </td>
-                      <td className="px-4 py-2 border">
-                        {loading.categories ? 'Loading...' : getCategoryName(report.category_id)}
-                      </td>
-                      <td className="px-4 py-2 border">
-                        {editingReportId === report.id ? (
-                          <input
-                            type="text"
-                            value={editReport.reason}
-                            onChange={e => setEditReport({...editReport, reason: e.target.value})}
-                            className="w-full p-1 border rounded"
-                          />
-                        ) : (
-                          report.reason
-                        )}
-                      </td>
-                      <td className="px-4 py-2 border">{new Date(report.created_at).toLocaleString()}</td>
-                      <td className="px-4 py-2 border">
-                        {editingReportId === report.id ? (
-                          <div className="flex space-x-1">
-                            <button
-                              onClick={() => handleUpdateReport(report.id)}
-                              disabled={loading.operations}
-                              className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => setEditingReportId(null)}
-                              className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex space-x-1">
-                            <button
-                              onClick={() => handleEditReport(report)}
-                              className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReport(report.id)}
-                              disabled={loading.operations}
-                              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </td>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-4 text-center text-gray-500">No users found</td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <tr key={user.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <label className="inline-flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={user.is_admin}
+                              onChange={(e) => updateUserAdminStatus(user.id, e.target.checked)}
+                              className="form-checkbox h-4 w-4 text-emerald-600 transition duration-150 ease-in-out"
+                              disabled={loading}
+                            />
+                          </label>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => deleteUser(user.id)}
+                            disabled={loading}
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 };
