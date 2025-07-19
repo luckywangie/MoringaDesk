@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Question, User, Category
+from models import db, Question, User, Category, Notifications
 from .auth import token_required
 from datetime import datetime
 
@@ -38,6 +38,17 @@ def create_question(current_user):
     )
 
     db.session.add(new_question)
+    db.session.commit()
+
+    # Notify all users including the one who asked
+    users = User.query.all()
+    for user in users:
+        notification = Notifications(
+            user_id=user.id,
+            type='question',
+            message=f'{current_user.username} asked a new question: \"{title}\"'
+        )
+        db.session.add(notification)
     db.session.commit()
 
     return jsonify({

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, FollowUp
-from datetime import datetime
+from models import db, FollowUp, Answers, Question, Notifications, User
+from datetime import datetime  # noqa: F401
 
 followup_bp = Blueprint('followup_bp', __name__, url_prefix='/api')
 
@@ -16,7 +16,7 @@ def serialize_followup(followup):
         'created_at': followup.created_at.strftime('%a, %d %b %Y %H:%M:%S GMT')
     }
 
-# CREATE follow-up
+# CREATE follow-up (notifies all previous contributors)
 @followup_bp.route('/followups', methods=['POST'])
 @jwt_required()
 def create_followup():
@@ -37,6 +37,45 @@ def create_followup():
         content=content
     )
     db.session.add(followup)
+
+    notified_user_ids = set()
+    current_user = User.query.get(user_id)
+
+    # Notify question owner
+    question = Question.query.get(question_id)
+    if question and question.user_id != user_id:
+        notification = Notifications(
+            user_id=question.user_id,
+            type='followup',
+            message=f"{current_user.username} followed up on your question: '{question.title}'"
+        )
+        db.session.add(notification)
+        notified_user_ids.add(question.user_id)
+
+    # Notify all users who answered the question
+    answer_users = db.session.query(Answers.user_id).filter_by(question_id=question_id).distinct()
+    for row in answer_users:
+        if row.user_id != user_id and row.user_id not in notified_user_ids:
+            notification = Notifications(
+                user_id=row.user_id,
+                type='followup',
+                message=f"{current_user.username} added a follow-up to a question you answered."
+            )
+            db.session.add(notification)
+            notified_user_ids.add(row.user_id)
+
+    # Notify all previous follow-up authors
+    followup_users = db.session.query(FollowUp.user_id).filter_by(question_id=question_id).distinct()
+    for row in followup_users:
+        if row.user_id != user_id and row.user_id not in notified_user_ids:
+            notification = Notifications(
+                user_id=row.user_id,
+                type='followup',
+                message=f"{current_user.username} added a follow-up to a thread you contributed to."
+            )
+            db.session.add(notification)
+            notified_user_ids.add(row.user_id)
+
     db.session.commit()
 
     return jsonify({'message': 'Follow-up created successfully', 'followup': serialize_followup(followup)}), 201
