@@ -15,74 +15,69 @@ function Navbar() {
     navigate('/login');
   };
 
-  const linkClasses =
-    "px-3 py-1 border border-gray-300 rounded-md hover:border-green-600 hover:bg-green-100 transition text-sm md:text-base";
-
   const isAdmin = user?.is_admin === true;
 
+  // ✅ Figma-inspired button styles
+  const baseBtn =
+    'px-4 py-2 text-white font-bold rounded-sm transition duration-200 text-sm md:text-base';
+  const pinkBtn = `${baseBtn} bg-[#ff007f] hover:bg-[#e60073]`;     // Home / FAQs
+  const darkPinkBtn = `${baseBtn} bg-[#d10072] hover:bg-[#b80066]`; // GetStarted
+  const logoutBtn = 'px-4 py-2 font-bold rounded-sm transition duration-200 text-sm md:text-base bg-white text-red-600 hover:bg-red-600 hover:text-white';
+
   return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm px-4 py-3">
+    <nav className="bg-gradient-to-r from-[#f72585] to-[#b5179e] text-white px-4 py-3 shadow-md">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link to="/" className="flex flex-col items-center space-y-1">
+
+        {/* Logo and Title */}
+        <Link to="/" className="flex items-center space-x-2">
           <img
             src="https://i.postimg.cc/NfNCngcQ/moringa-logo.png"
             alt="Moringa Logo"
-            className="w-16 h-16 rounded-full border border-green-600 shadow-md"
+            className="w-10 h-10 rounded-full border-2 border-white shadow"
           />
-          <span className="text-green-700 font-semibold text-sm">MoringaDesk</span>
+          <span className="text-lg font-bold">MoringaDesk</span>
         </Link>
 
-        <div className="hidden md:flex flex-wrap gap-2 text-gray-700 items-center">
+        {/* Desktop Buttons */}
+        <div className="hidden md:flex flex-wrap gap-3 items-center">
           {!isAdmin && (
             <>
-              <Link to="/" className={linkClasses}>Home</Link>
-              <Link to="/about" className={linkClasses}>About</Link>
-              {user && <Link to="/ask-question" className={linkClasses}>Ask Question</Link>}
+              <Link to="/" className={pinkBtn}>Home</Link>
+              <Link to="/faqs" className={pinkBtn}>FAQs</Link>
+              {user && <Link to="/ask-question" className={darkPinkBtn}>GetStarted</Link>}
             </>
           )}
-
-          <Link to="/faqs" className={linkClasses}>FAQs</Link>
 
           {user && (
             <>
               {!isAdmin && (
-                <Link to="/dashboard" className={linkClasses}>Dashboard</Link>
+                <Link to="/dashboard" className={pinkBtn}>Dashboard</Link>
               )}
-              <Link to="/questions" className={linkClasses}>Questions</Link>
-              <Link to="/notifications" className={linkClasses}>Notifications</Link>
-              <Link to="/profile" className={linkClasses}>Profile</Link>
+              <Link to="/questions" className={pinkBtn}>Questions</Link>
+              <Link to="/notifications" className={pinkBtn}>Notifications</Link>
+              <Link to="/profile" className={pinkBtn}>Profile</Link>
               {isAdmin && (
-                <Link to="/admin" className={linkClasses}>Admin</Link>
+                <>
+                  <Link to="/admin" className={pinkBtn}>Admin</Link>
+                  <Link to="/related-questions" className={pinkBtn}>Related Questions</Link>
+                </>
               )}
             </>
           )}
 
           {user ? (
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1 border border-red-300 rounded-md text-red-600 hover:border-red-600 hover:bg-red-100 transition"
-            >
-              Logout
-            </button>
+            <button onClick={handleLogout} className={logoutBtn}>Logout</button>
           ) : (
-            <Link to="/signup" className="px-3 py-1 border border-green-500 text-green-600 rounded-md hover:bg-green-100 hover:border-green-600 transition font-semibold">
-              Sign Up
-            </Link>
+            <Link to="/signup" className={darkPinkBtn}>GetStarted</Link>
           )}
         </div>
 
         {/* Mobile Toggle */}
         <button
-          className="md:hidden text-gray-700 focus:outline-none"
+          className="md:hidden text-white focus:outline-none"
           onClick={() => setMenuOpen(!menuOpen)}
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {menuOpen ? (
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             ) : (
@@ -94,31 +89,32 @@ function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden mt-3 px-4 space-y-2 text-gray-700">
+        <div className="md:hidden mt-4 px-4 space-y-2">
           {!isAdmin && (
             <>
-              <Link to="/" onClick={() => setMenuOpen(false)} className={linkClasses}>Home</Link>
-              <Link to="/about" onClick={() => setMenuOpen(false)} className={linkClasses}>About</Link>
+              <Link to="/" onClick={() => setMenuOpen(false)} className={pinkBtn}>Home</Link>
+              <Link to="/faqs" onClick={() => setMenuOpen(false)} className={pinkBtn}>FAQs</Link>
               {user && (
-                <Link to="/ask-question" onClick={() => setMenuOpen(false)} className={linkClasses}>
-                  Ask Question
+                <Link to="/ask-question" onClick={() => setMenuOpen(false)} className={darkPinkBtn}>
+                  GetStarted
                 </Link>
               )}
             </>
           )}
 
-          <Link to="/faqs" onClick={() => setMenuOpen(false)} className={linkClasses}>FAQs</Link>
-
           {user && (
             <>
               {!isAdmin && (
-                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className={linkClasses}>Dashboard</Link>
+                <Link to="/dashboard" onClick={() => setMenuOpen(false)} className={pinkBtn}>Dashboard</Link>
               )}
-              <Link to="/questions" onClick={() => setMenuOpen(false)} className={linkClasses}>Questions</Link>
-              <Link to="/notifications" onClick={() => setMenuOpen(false)} className={linkClasses}>Notifications</Link>
-              <Link to="/profile" onClick={() => setMenuOpen(false)} className={linkClasses}>Profile</Link>
+              <Link to="/questions" onClick={() => setMenuOpen(false)} className={pinkBtn}>Questions</Link>
+              <Link to="/notifications" onClick={() => setMenuOpen(false)} className={pinkBtn}>Notifications</Link>
+              <Link to="/profile" onClick={() => setMenuOpen(false)} className={pinkBtn}>Profile</Link>
               {isAdmin && (
-                <Link to="/admin" onClick={() => setMenuOpen(false)} className={linkClasses}>Admin</Link>
+                <>
+                  <Link to="/admin" onClick={() => setMenuOpen(false)} className={pinkBtn}>Admin</Link>
+                  <Link to="/related-questions" onClick={() => setMenuOpen(false)} className={pinkBtn}>Related Questions</Link>
+                </>
               )}
             </>
           )}
@@ -126,7 +122,7 @@ function Navbar() {
           {user ? (
             <button
               onClick={handleLogout}
-              className="block w-full text-left px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-100 hover:border-red-600 transition"
+              className="block w-full text-left px-4 py-2 font-bold rounded-sm bg-white text-red-600 hover:bg-red-600 hover:text-white transition"
             >
               Logout
             </button>
@@ -134,9 +130,9 @@ function Navbar() {
             <Link
               to="/signup"
               onClick={() => setMenuOpen(false)}
-              className="block px-3 py-1 border border-green-500 text-green-600 rounded-md hover:bg-green-100 hover:border-green-600 transition font-semibold"
+              className={darkPinkBtn + " block w-full text-center"}
             >
-              Sign Up
+              GetStarted
             </Link>
           )}
         </div>

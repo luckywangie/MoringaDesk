@@ -23,6 +23,7 @@ import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import QuestionAnswer from './pages/QuestionAnswer';
 import Questions from './pages/Questions';
+import RelatedQuestions from './pages/RelatedQuestions'; // Add this import
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -50,6 +51,8 @@ function App() {
                   <Route path="/questions" element={<Questions />} />
                   <Route path="/category-manager" element={<CategoryManager />} />
                   <Route path="/admin" element={<Admin />} />
+                  {/* Add the new route for RelatedQuestions */}
+                  <Route path="/related-questions" element={<RelatedQuestions />} />
                 </Routes>
               </main>
 

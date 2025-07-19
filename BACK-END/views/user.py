@@ -61,6 +61,28 @@ def update_user(current_user, user_id):
             'is_admin': user.is_admin
         }
     }), 200
+    
+# -------------------- Activate/Deactivate User (Admin Only) --------------------
+@user_bp.route('/<int:user_id>/activate', methods=['PUT'])
+@token_required
+def activate_user(current_user, user_id):
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json()
+    is_active = data.get('is_active')
+    if is_active is None:
+        return jsonify({'error': 'is_active (true/false) is required'}), 400
+
+    user.is_active = bool(is_active)
+    db.session.commit()
+
+    status = 'activated' if user.is_active else 'deactivated'
+    return jsonify({'success': f'User {user.username} {status} successfully', 'is_active': user.is_active}), 200
 
 # -------------------- Delete User (Admin or Self) --------------------
 @user_bp.route('/<int:user_id>', methods=['DELETE'])

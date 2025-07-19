@@ -102,6 +102,24 @@ def get_solved_questions():
         })
     return jsonify(result), 200
 
+#--------------------- Get Unsolved Questions --------------
+@question_bp.route('/is_unsolved', methods=['GET'])
+def get_unsolved_questions():
+    questions = Question.query.filter_by(is_solved=False).all()
+    result = []
+    for q in questions:
+        result.append({
+            'id': q.id,
+            'title': q.title,
+            'description': q.description,
+            'user_id': q.user_id,
+            'category_id': q.category_id,
+            'language': q.language,
+            'created_at': q.created_at,
+            'is_solved': q.is_solved
+        })
+    return jsonify(result), 200
+
 # -------------------- Get All Questions --------------------
 @question_bp.route('', methods=['GET'])
 def get_questions():
