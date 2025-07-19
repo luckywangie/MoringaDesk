@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Answers, Question, User
+from models import db, Answers, Question, User, Notifications  # ✅ Added Notifications import
 
 answers_bp = Blueprint('answers_bp', __name__, url_prefix='/api')
 
@@ -14,7 +14,7 @@ def serialize_answer(answer):
         'created_at': answer.created_at.strftime('%a, %d %b %Y %H:%M:%S GMT')
     }
 
-# CREATE Answer
+# CREATE Answer (with notification to question owner)
 @answers_bp.route('/questions/<int:question_id>/answers', methods=['POST'])
 @jwt_required()
 def create_answer(question_id):
@@ -31,6 +31,17 @@ def create_answer(question_id):
 
     new_answer = Answers(content=content, question_id=question_id, user_id=user_id)
     db.session.add(new_answer)
+
+    # ✅ Notify the question owner (if not the same as the answerer)
+    if question.user_id != user_id:
+        user = User.query.get(user_id)
+        notification = Notifications(
+            user_id=question.user_id,
+            type='answer',
+            message=f'{user.username} answered your question: "{question.title}"'
+        )
+        db.session.add(notification)
+
     db.session.commit()
 
     return jsonify({'success': 'Answer created successfully', 'answer': serialize_answer(new_answer)}), 201
@@ -65,7 +76,6 @@ def approve_answer(answer_id):
     db.session.commit()
 
     return jsonify({'success': 'Answer approved successfully'}), 200
-
 
 # READ: Get all answers for a question
 @answers_bp.route('/questions/<int:question_id>/answers', methods=['GET'])

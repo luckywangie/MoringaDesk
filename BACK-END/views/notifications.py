@@ -20,9 +20,7 @@ def serialize_notification(notification):
 @jwt_required()
 def create_notification():
     data = request.get_json()
-    user_id = data.get('user_id')  # Admin can specify this
-    current_user = get_jwt_identity() 
-
+    user_id = data.get('user_id')
     type = data.get('type')
     message = data.get('message')
 
@@ -39,7 +37,7 @@ def create_notification():
 
     return jsonify({'message': 'Notification created', 'notification': serialize_notification(notification)}), 201
 
-# READ all notifications (admin only)
+# READ all notifications (admin only) with optional pagination & filter
 @notification_bp.route('/notifications', methods=['GET'])
 @jwt_required()
 def get_all_notifications():
@@ -48,15 +46,45 @@ def get_all_notifications():
     if not user.is_admin:
         return jsonify({'message': 'Admin access required'}), 403
 
-    notifications = Notifications.query.order_by(Notifications.created_at.desc()).all()
+    is_read = request.args.get('is_read')
+    limit = request.args.get('limit', type=int)
+    offset = request.args.get('offset', type=int)
+
+    query = Notifications.query
+    if is_read is not None:
+        query = query.filter_by(is_read=(is_read.lower() == 'true'))
+
+    query = query.order_by(Notifications.created_at.desc())
+
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    notifications = query.all()
     return jsonify([serialize_notification(n) for n in notifications]), 200
 
-# READ my notifications (authenticated user)
+# READ my notifications with optional filter and pagination
 @notification_bp.route('/notifications/me', methods=['GET'])
 @jwt_required()
 def get_my_notifications():
     current_user = get_jwt_identity()
-    notifications = Notifications.query.filter_by(user_id=current_user).order_by(Notifications.created_at.desc()).all()
+    is_read = request.args.get('is_read')
+    limit = request.args.get('limit', type=int)
+    offset = request.args.get('offset', type=int)
+
+    query = Notifications.query.filter_by(user_id=current_user)
+    if is_read is not None:
+        query = query.filter_by(is_read=(is_read.lower() == 'true'))
+
+    query = query.order_by(Notifications.created_at.desc())
+
+    if limit is not None:
+        query = query.limit(limit)
+    if offset is not None:
+        query = query.offset(offset)
+
+    notifications = query.all()
     return jsonify([serialize_notification(n) for n in notifications]), 200
 
 # READ one notification
@@ -102,10 +130,22 @@ def delete_notification(id):
     current_user = get_jwt_identity()
     user = User.query.get(current_user)
 
-    # Only the owner or admin can delete
     if notification.user_id != current_user and not user.is_admin:
         return jsonify({'message': 'Unauthorized'}), 403
 
     db.session.delete(notification)
     db.session.commit()
     return jsonify({'message': 'Notification deleted'}), 200
+
+# MARK ALL as read
+@notification_bp.route('/notifications/mark-all-read', methods=['PUT'])
+@jwt_required()
+def mark_all_notifications_read():
+    current_user = get_jwt_identity()
+    notifications = Notifications.query.filter_by(user_id=current_user, is_read=False).all()
+
+    for notification in notifications:
+        notification.is_read = True
+
+    db.session.commit()
+    return jsonify({'message': 'All notifications marked as read'}), 200
