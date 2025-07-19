@@ -114,9 +114,9 @@ function Home({ sidebarOpen, setSidebarOpen }) {
 </div>
   
 
-      {/* Main Content */}
+      
       <div className={`${contentPadding} transition-all duration-200`}>
-        {/* Stats Section */}
+        
         <section className="py-12 px-6 bg-white">
           <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
