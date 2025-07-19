@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 function Navbar() {
   const { user, logout } = useUser();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start with sidebar closed by default
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -14,6 +14,7 @@ function Navbar() {
     logout();
     toast.success('Logged out');
     setMenuOpen(false);
+    setSidebarOpen(false); // Close sidebar on logout
     navigate('/login');
   };
 
@@ -36,7 +37,6 @@ function Navbar() {
   const userLinks = [
     { path: '/dashboard', name: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
     { path: '/questions', name: 'Community Qs', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { path: '/my-questions', name: 'My Questions', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
     { path: '/notifications', name: 'Notifications', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
     { path: '/profile', name: 'Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' }
   ];
@@ -44,8 +44,6 @@ function Navbar() {
   // Admin links
   const adminLinks = [
     { path: '/admin', name: 'Admin Dashboard', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
-    { path: '/admin/users', name: 'Manage Users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
-    { path: '/admin/questions', name: 'Manage Questions', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
     { path: '/admin/analytics', name: 'Analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' }
   ];
 
@@ -57,18 +55,20 @@ function Navbar() {
 
         {/* Logo and Title with Sidebar Toggle */}
         <div className="flex items-center">
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="mr-3 text-gray-500 hover:text-green-600 focus:outline-none transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {sidebarOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          {user && ( // Only show sidebar toggle if user is logged in
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="mr-3 text-gray-500 hover:text-green-600 focus:outline-none transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {sidebarOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          )}
           <Link to="/" className="flex items-center space-x-2 group">
             <img
               src="https://i.postimg.cc/NfNCngcQ/moringa-logo.png"
@@ -91,12 +91,14 @@ function Navbar() {
               <Link to="/faqs" className={`${baseBtn} text-gray-700 hover:bg-gray-100 px-3 py-1.5`}>
                 FAQs
               </Link>
-              <Link to="/ask-question" className={`${secondaryBtn} flex items-center gap-1 transform hover:-translate-y-0.5`}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                Ask Question
-              </Link>
+              {user && (
+                <Link to="/ask-question" className={`${secondaryBtn} flex items-center gap-1 transform hover:-translate-y-0.5`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                  Ask Question
+                </Link>
+              )}
             </>
           )}
 
@@ -137,8 +139,8 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Sidebar Navigation */}
-      {sidebarOpen && (
+      {/* Sidebar Navigation - Only show when user is logged in */}
+      {user && sidebarOpen && (
         <div className="hidden md:block fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 pt-20 px-4 pb-4 overflow-y-auto shadow-sm">
           <nav className="space-y-1">
             {currentLinks.map((link) => (
@@ -193,54 +195,68 @@ function Navbar() {
               >
                 FAQs
               </Link>
-              <Link 
-                to="/ask-question" 
-                onClick={() => setMenuOpen(false)} 
-                className={`${secondaryBtn} flex items-center gap-1 w-full text-center justify-center`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                Ask Question
-              </Link>
+              {user && (
+                <Link 
+                  to="/ask-question" 
+                  onClick={() => setMenuOpen(false)} 
+                  className={`${secondaryBtn} flex items-center gap-1 w-full text-center justify-center`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                  Ask Question
+                </Link>
+              )}
             </>
           )}
 
-          {/* Mobile Navigation Links */}
-          <div className="pt-2">
-            {currentLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setMenuOpen(false)}
-                className={`flex items-center px-4 py-3 rounded-lg ${isActive(link.path)} transition-colors duration-200`}
-              >
-                <svg 
-                  className={`w-5 h-5 mr-3 ${isActive(link.path).includes('indigo') ? 'text-green-500' : 'text-gray-500'}`} 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+          {/* Mobile Navigation Links - Only show when user is logged in */}
+          {user && (
+            <div className="pt-2">
+              {currentLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMenuOpen(false)}
+                  className={`flex items-center px-4 py-3 rounded-lg ${isActive(link.path)} transition-colors duration-200`}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} />
-                </svg>
-                {link.name}
-              </Link>
-            ))}
-          </div>
+                  <svg 
+                    className={`w-5 h-5 mr-3 ${isActive(link.path).includes('indigo') ? 'text-green-500' : 'text-gray-500'}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} />
+                  </svg>
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          )}
 
-          {/* Mobile Logout */}
-          <button
-            onClick={() => {
-              handleLogout();
-              setMenuOpen(false);
-            }}
-            className={`${logoutBtn} flex items-center gap-1 w-full justify-center mt-4`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
-            </svg>
-            Logout
-          </button>
+          {/* Mobile Logout/Login */}
+          {user ? (
+            <button
+              onClick={() => {
+                handleLogout();
+                setMenuOpen(false);
+              }}
+              className={`${logoutBtn} flex items-center gap-1 w-full justify-center mt-4`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+              </svg>
+              Logout
+            </button>
+          ) : (
+            <Link 
+              to="/login" 
+              onClick={() => setMenuOpen(false)} 
+              className={`${primaryBtn} flex items-center gap-1 w-full justify-center mt-4`}
+            >
+              Login
+            </Link>
+          )}
         </div>
       )}
     </nav>

@@ -20,6 +20,14 @@ const Dashboard = () => {
   const { user, token } = useUser();
   const navigate = useNavigate();
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user || !token) {
+      toast.error('Please login to access the dashboard');
+      navigate('/login');
+    }
+  }, [user, token, navigate]);
+
   const [allQuestions, setAllQuestions] = useState([]);
   const [myQuestions, setMyQuestions] = useState([]);
   const [filteredMyQuestions, setFilteredMyQuestions] = useState([]);
@@ -186,6 +194,10 @@ const Dashboard = () => {
       }
     }
   };
+
+  if (!user || !token) {
+    return null; // or a loading spinner while redirect happens
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
