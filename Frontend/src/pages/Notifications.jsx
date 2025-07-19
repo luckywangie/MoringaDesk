@@ -1,120 +1,130 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
+import axios from 'axios';
 import { UserContext } from '../context/UserContext';
 
-const mockUsers = [
-  { id: 2, name: 'Jane Moringa', email: 'jane@example.com' },
-  { id: 3, name: 'Peter Code', email: 'peter@example.com' },
-];
+const Notifications = () => {
+  const { user, token } = useContext(UserContext);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-const mockMessages = {
-  2: [
-    { id: 1, from: 'me', text: 'Hi Jane!', time: '10:00 AM' },
-    { id: 2, from: 'Jane Moringa', text: 'Hey! How are you?', time: '10:01 AM' },
-  ],
-  3: [
-    { id: 1, from: 'me', text: 'Hello Peter', time: 'Yesterday' },
-    { id: 2, from: 'Peter Code', text: 'Hi there!', time: 'Yesterday' },
-  ],
-};
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('http://localhost:5000/api/notifications/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-const ChatPage = () => {
-  const { user } = useContext(UserContext);
-  const [selectedUserId, setSelectedUserId] = useState(mockUsers[0]?.id || null);
-  const [messages, setMessages] = useState([]);
-  const [messageInput, setMessageInput] = useState('');
+      console.log('Notification API response:', res.data);
+
+      // ✅ Ensure notifications is always an array
+      const data = Array.isArray(res.data) ? res.data : res.data.notifications || [];
+      setNotifications(data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError('Failed to load notifications');
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (selectedUserId) {
-      setMessages(mockMessages[selectedUserId] || []);
-    }
-  }, [selectedUserId]);
+    if (token) fetchNotifications();
+  }, [token]);
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim()) return;
-    const newMsg = {
-      id: Date.now(),
-      from: 'me',
-      text: messageInput,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-    setMessages((prev) => [...prev, newMsg]);
-    setMessageInput('');
+  const toggleRead = async (id, isRead) => {
+    try {
+      await axios.put(`http://localhost:5000/api/notifications/${id}`, { is_read: !isRead }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchNotifications();
+    } catch (err) {
+      console.error('Error updating read status:', err);
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/notifications/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error('Error deleting notification:', err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await axios.put('http://localhost:5000/api/notifications/mark-all-read', {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchNotifications();
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+    }
   };
 
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-700">
-        Please log in to access chat.
-      </div>
-    );
+    return <div className="p-6 text-center">Please log in to view notifications.</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Users List - Left */}
-        <div className="md:col-span-1 bg-white border rounded-lg shadow p-4 h-[80vh] overflow-y-auto">
-          <h3 className="text-lg font-bold text-green-700 mb-4">Users</h3>
-          <ul className="space-y-3">
-            {mockUsers.map((u) => (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-green-700">My Notifications</h2>
+          <button
+            onClick={markAllAsRead}
+            className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+          >
+            Mark all as read
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="text-gray-500">Loading notifications...</div>
+        ) : error ? (
+          <div className="text-red-600">{error}</div>
+        ) : notifications.length === 0 ? (
+          <div className="text-gray-500">No notifications yet.</div>
+        ) : (
+          <ul className="space-y-4">
+            {notifications.map((n) => (
               <li
-                key={u.id}
-                onClick={() => setSelectedUserId(u.id)}
-                className={`p-3 rounded-lg cursor-pointer border hover:border-green-500 transition ${
-                  selectedUserId === u.id ? 'bg-green-50 border-green-600' : 'bg-white'
+                key={n.id}
+                className={`p-4 border rounded-lg flex justify-between items-start shadow-sm ${
+                  n.is_read ? 'bg-gray-100' : 'bg-green-50'
                 }`}
               >
-                <div className="font-semibold text-black">{u.name}</div>
-                <div className="text-sm text-gray-600">{u.email}</div>
+                <div>
+                  <div className="text-sm text-gray-600 capitalize">{n.type}</div>
+                  <div className="font-medium text-black">{n.message}</div>
+                  <div className="text-xs text-gray-500 mt-1">{n.created_at}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => toggleRead(n.id, n.is_read)}
+                    className="text-xs text-green-700 hover:underline"
+                  >
+                    {n.is_read ? 'Mark as unread' : 'Mark as read'}
+                  </button>
+                  <button
+                    onClick={() => deleteNotification(n.id)}
+                    className="text-xs text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
-        </div>
-
-        {/* Chat Box - Right */}
-        <div className="md:col-span-3 bg-white border rounded-lg shadow p-4 flex flex-col h-[80vh]">
-          <div className="border-b pb-3 mb-3">
-            <h2 className="text-xl font-bold text-green-700">
-              Chat with {mockUsers.find(u => u.id === selectedUserId)?.name || 'User'}
-            </h2>
-          </div>
-
-          <div className="flex-1 overflow-y-auto space-y-3 mb-4 px-2">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`max-w-[70%] px-4 py-2 rounded-lg text-sm ${
-                  msg.from === 'me'
-                    ? 'bg-green-100 text-black self-end ml-auto'
-                    : 'bg-gray-200 text-black self-start'
-                }`}
-              >
-                <div>{msg.text}</div>
-                <div className="text-xs text-gray-500 mt-1">{msg.time}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Message Input */}
-          <div className="flex items-center gap-2 border-t pt-3">
-            <input
-              type="text"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-              placeholder="Type your message..."
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-            />
-            <button
-              onClick={handleSendMessage}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              Send
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default ChatPage;
+export default Notifications;

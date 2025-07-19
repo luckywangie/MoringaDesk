@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Question, User, Category
+from models import db, Question, User, Category, Notifications
 from .auth import token_required
 from datetime import datetime
 
@@ -40,6 +40,17 @@ def create_question(current_user):
     db.session.add(new_question)
     db.session.commit()
 
+    # Notify all users including the one who asked
+    users = User.query.all()
+    for user in users:
+        notification = Notifications(
+            user_id=user.id,
+            type='question',
+            message=f'{current_user.username} asked a new question: \"{title}\"'
+        )
+        db.session.add(notification)
+    db.session.commit()
+
     return jsonify({
         'success': 'Question created successfully',
         'question': {
@@ -77,6 +88,24 @@ def set_question_solved(current_user, question_id):
 @question_bp.route('/is_solved', methods=['GET'])
 def get_solved_questions():
     questions = Question.query.filter_by(is_solved=True).all()
+    result = []
+    for q in questions:
+        result.append({
+            'id': q.id,
+            'title': q.title,
+            'description': q.description,
+            'user_id': q.user_id,
+            'category_id': q.category_id,
+            'language': q.language,
+            'created_at': q.created_at,
+            'is_solved': q.is_solved
+        })
+    return jsonify(result), 200
+
+#--------------------- Get Unsolved Questions --------------
+@question_bp.route('/is_unsolved', methods=['GET'])
+def get_unsolved_questions():
+    questions = Question.query.filter_by(is_solved=False).all()
     result = []
     for q in questions:
         result.append({

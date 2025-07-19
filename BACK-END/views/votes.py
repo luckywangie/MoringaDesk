@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Votes, Answers, User 
-
+from models import db, Votes, Answers, User, Notifications  # ✅ Added Notifications
 
 votes_bp = Blueprint('votes_bp', __name__, url_prefix='/api')
 
@@ -36,6 +35,19 @@ def create_vote():
 
     vote = Votes(user_id=current_user, answer_id=answer_id, vote_type=vote_type)
     db.session.add(vote)
+
+    # ✅ Notify the owner of the answer (if not voting on their own answer)
+    answer = Answers.query.get(answer_id)
+    if answer and answer.user_id != current_user:
+        voter = User.query.get(current_user)
+        notif_msg = f'{voter.username} {vote_type}voted your answer.'
+        notification = Notifications(
+            user_id=answer.user_id,
+            type='vote',
+            message=notif_msg
+        )
+        db.session.add(notification)
+
     db.session.commit()
 
     return jsonify({'success': 'Vote created', 'vote': serialize_vote(vote)}), 201
