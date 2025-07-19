@@ -52,7 +52,11 @@ function Navbar() {
               <Link to="/notifications" className={linkClasses}>Notifications</Link>
               <Link to="/profile" className={linkClasses}>Profile</Link>
               {isAdmin && (
-                <Link to="/admin" className={linkClasses}>Admin</Link>
+                <>
+                  <Link to="/admin" className={linkClasses}>Admin</Link>
+                  
+                  <Link to="/related-questions" className={linkClasses}>Related Questions</Link>
+                </>
               )}
             </>
           )}
@@ -118,7 +122,11 @@ function Navbar() {
               <Link to="/notifications" onClick={() => setMenuOpen(false)} className={linkClasses}>Notifications</Link>
               <Link to="/profile" onClick={() => setMenuOpen(false)} className={linkClasses}>Profile</Link>
               {isAdmin && (
-                <Link to="/admin" onClick={() => setMenuOpen(false)} className={linkClasses}>Admin</Link>
+                <>
+                  <Link to="/admin" onClick={() => setMenuOpen(false)} className={linkClasses}>Admin</Link>
+                  
+                  <Link to="/related-questions" onClick={() => setMenuOpen(false)} className={linkClasses}>Related Questions</Link>
+                </>
               )}
             </>
           )}
