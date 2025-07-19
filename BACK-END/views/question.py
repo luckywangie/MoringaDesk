@@ -63,7 +63,7 @@ def create_question(current_user):
             'created_at': new_question.created_at
         }
     }), 201
-    
+
 # -------------------- Mark Question as Solved/Unsolved (Admin or Owner) --------------------
 @question_bp.route('/<int:question_id>/is_solved', methods=['PUT'])
 @token_required
@@ -120,10 +120,37 @@ def get_unsolved_questions():
         })
     return jsonify(result), 200
 
-# -------------------- Get All Questions --------------------
+# -------------------- Get All Questions (with Filters) --------------------
 @question_bp.route('', methods=['GET'])
 def get_questions():
-    questions = Question.query.all()
+    query = Question.query
+
+    # Filters
+    search = request.args.get('search')
+    category_id = request.args.get('category_id')
+    language = request.args.get('language')
+    solved = request.args.get('solved')
+
+    if search:
+        query = query.filter(
+            (Question.title.ilike(f'%{search}%')) |
+            (Question.description.ilike(f'%{search}%'))
+        )
+
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+
+    if language:
+        query = query.filter_by(language=language)
+
+    if solved is not None:
+        if solved.lower() == 'true':
+            query = query.filter_by(is_solved=True)
+        elif solved.lower() == 'false':
+            query = query.filter_by(is_solved=False)
+
+    questions = query.order_by(Question.created_at.desc()).all()
+
     result = []
     for q in questions:
         result.append({
@@ -133,7 +160,8 @@ def get_questions():
             'user_id': q.user_id,
             'category_id': q.category_id,
             'language': q.language,
-            'created_at': q.created_at
+            'created_at': q.created_at,
+            'is_solved': q.is_solved
         })
 
     return jsonify(result), 200
@@ -152,7 +180,8 @@ def get_question(question_id):
         'user_id': question.user_id,
         'category_id': question.category_id,
         'language': question.language,
-        'created_at': question.created_at
+        'created_at': question.created_at,
+        'is_solved': question.is_solved
     }), 200
 
 # -------------------- Update Question --------------------
@@ -170,7 +199,8 @@ def update_question(current_user, question_id):
     question.title = data.get('title', question.title)
     question.description = data.get('description', question.description)
     question.category_id = data.get('category_id', question.category_id)
-    question.language = data.get('language', question.language)  # <-- update language
+    question.language = data.get('language', question.language)
+    question.is_solved = data.get('is_solved', question.is_solved)  # <-- support is_solved update
 
     db.session.commit()
 
@@ -183,6 +213,7 @@ def update_question(current_user, question_id):
             'user_id': question.user_id,
             'category_id': question.category_id,
             'language': question.language,
+            'is_solved': question.is_solved,
             'created_at': question.created_at
         }
     }), 200
