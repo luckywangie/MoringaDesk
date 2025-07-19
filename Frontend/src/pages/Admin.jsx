@@ -4,6 +4,7 @@ import { useUser } from '../context/UserContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const FollowupForm = ({ answerId, onFollowupCreated }) => {
   const [content, setContent] = useState('');
@@ -44,7 +45,7 @@ const FollowupForm = ({ answerId, onFollowupCreated }) => {
 };
 
 const ReportForm = ({ questionId, onReportSubmit, onCancel }) => {
-  const { loading } = useAdmin();
+  const { loading, user } = useAdmin();
   const [reason, setReason] = useState('');
   const [categoryId, setCategoryId] = useState('');
 
@@ -69,6 +70,7 @@ const ReportForm = ({ questionId, onReportSubmit, onCancel }) => {
             onChange={(e) => setCategoryId(e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-md text-sm text-black"
             required
+            disabled={user?.is_admin}
           >
             <option value="" className="text-gray-500">Select a category</option>
             <option value="1" className="text-black">Inappropriate Content</option>
@@ -84,6 +86,7 @@ const ReportForm = ({ questionId, onReportSubmit, onCancel }) => {
           className="w-full p-2 border border-gray-300 rounded-md text-sm text-black"
           rows={2}
           required
+          disabled={user?.is_admin}
         />
         <div className="flex justify-end space-x-2 mt-2">
           <button
@@ -95,7 +98,7 @@ const ReportForm = ({ questionId, onReportSubmit, onCancel }) => {
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || user?.is_admin}
             className="px-3 py-1 bg-emerald-600 text-white rounded-md text-sm disabled:opacity-50"
           >
             {loading ? 'Reporting...' : 'Submit Report'}
@@ -175,6 +178,72 @@ const FaqForm = ({ faq, onCancel, onSubmit }) => {
   );
 };
 
+const NotificationItem = ({ notification, onDelete, onUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedMessage, setEditedMessage] = useState(notification.message);
+
+  const handleUpdate = async () => {
+    const success = await onUpdate(notification.id, { message: editedMessage });
+    if (success) {
+      setIsEditing(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden border border-blue-100">
+      <div className="p-5">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-lg font-semibold text-blue-800">Notification {notification.id}</h3>
+            {isEditing ? (
+              <textarea
+                value={editedMessage}
+                onChange={(e) => setEditedMessage(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm text-black mt-1"
+                rows={2}
+              />
+            ) : (
+              <p className="text-gray-600 mt-1">{notification.message}</p>
+            )}
+            <div className="mt-2 text-sm text-gray-500">
+              <p>Date: {new Date(notification.created_at).toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex justify-end space-x-2">
+          {isEditing ? (
+            <>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdate}
+                className="px-3 py-1 bg-emerald-600 text-white rounded-md text-sm"
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <>
+             
+              <button
+                onClick={() => onDelete(notification.id)}
+                className="px-3 py-1 bg-red-100 text-red-800 rounded-md text-sm"
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Admin = () => {
   const {
     questions,
@@ -200,8 +269,10 @@ const Admin = () => {
     deleteReport,
     deleteQuestion,
     deleteNotification,
+    updateNotification,
     getUserDetails,
     updateUserAdminStatus,
+    toggleUserActivation,
     deleteUser
   } = useAdmin();
   
@@ -250,7 +321,17 @@ const Admin = () => {
   };
 
   const handleDeleteFaq = async (id) => {
-    if (window.confirm('Are you sure you want to delete this FAQ?')) {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
       await deleteFaq(id);
     }
   };
@@ -261,6 +342,30 @@ const Admin = () => {
       setShowReportForm(null);
     }
     return success;
+  };
+
+  const handleToggleActivation = async (userId, isActive) => {
+    await toggleUserActivation(userId, isActive);
+  };
+
+  const handleDeleteUser = async (userId) => {
+    await deleteUser(userId);
+  };
+
+  const handleDeleteQuestion = async (questionId) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
+      await deleteQuestion(questionId);
+    }
   };
 
   const filteredQuestions = questions.filter(q =>
@@ -445,16 +550,18 @@ const Admin = () => {
                       <div className="flex space-x-2">
                         <button
                           className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-sm"
-                          onClick={() => deleteQuestion(question.id)}
+                          onClick={() => handleDeleteQuestion(question.id)}
                         >
                           Delete
                         </button>
-                        <button
-                          className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-md hover:bg-emerald-200 transition-colors text-sm"
-                          onClick={() => setShowReportForm(showReportForm === question.id ? null : question.id)}
-                        >
-                          Report
-                        </button>
+                        {!user?.is_admin && (
+                          <button
+                            className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-md hover:bg-emerald-200 transition-colors text-sm"
+                            onClick={() => setShowReportForm(showReportForm === question.id ? null : question.id)}
+                          >
+                            Report
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -619,29 +726,12 @@ const Admin = () => {
               </div>
             ) : (
               filteredNotifications.map((notification) => (
-                <div key={notification.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-blue-100">
-                  <div className="p-5">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-semibold text-blue-800">Notification #{notification.id}</h3>
-                        <p className="text-gray-600 mt-1">{notification.message}</p>
-                        <div className="mt-2 text-sm text-gray-500">
-                          <p>From: {getUserName(notification.user_id)}</p>
-                          <p>Date: {new Date(notification.created_at).toLocaleString()}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex justify-end space-x-2">
-                      <button
-                        className="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-sm"
-                        onClick={() => deleteNotification(notification.id)}
-                      >
-                        Delete Notification
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onDelete={deleteNotification}
+                  onUpdate={updateNotification}
+                />
               ))
             )}
           </div>
@@ -654,6 +744,7 @@ const Admin = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -661,7 +752,7 @@ const Admin = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="px-6 py-4 text-center text-gray-500">No users found</td>
+                      <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No users found</td>
                     </tr>
                   ) : (
                     filteredUsers.map((user) => (
@@ -669,6 +760,11 @@ const Admin = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.id}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <label className="inline-flex items-center">
                             <input
@@ -680,9 +776,16 @@ const Admin = () => {
                             />
                           </label>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                           <button
-                            onClick={() => deleteUser(user.id)}
+                            onClick={() => handleToggleActivation(user.id, !user.is_active)}
+                            disabled={loading}
+                            className={`${user.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} disabled:opacity-50`}
+                          >
+                            {user.is_active ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
                             disabled={loading}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50"
                           >

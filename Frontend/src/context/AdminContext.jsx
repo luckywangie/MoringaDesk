@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useUser } from './UserContext';
+import Swal from 'sweetalert2';
 
 const AdminContext = createContext();
 
@@ -187,6 +188,25 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // Update notification
+  const updateNotification = async (id, notificationData) => {
+    try {
+      setLoading(true);
+      const res = await api.put(`/notifications/${id}`, notificationData);
+      setNotifications(prev => prev.map(n => 
+        n.id === id ? res.data : n
+      ));
+      toast.success('Notification updated successfully');
+      return true;
+    } catch (error) {
+      console.error('Error updating notification:', error);
+     
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch all users
   const fetchUsers = async () => {
     if (!user?.is_admin) return;
@@ -194,10 +214,15 @@ export const AdminProvider = ({ children }) => {
     try {
       setLoading(true);
       const res = await api.get('/users');
-      setUsers(res.data);
+      // Set all users as active by default
+      const usersWithDefaultActive = res.data.map(user => ({
+        ...user,
+        is_active: true
+      }));
+      setUsers(usersWithDefaultActive);
       // Cache user details
       const cache = {};
-      res.data.forEach(u => {
+      usersWithDefaultActive.forEach(u => {
         cache[u.id] = u;
       });
       setUserDetailsCache(cache);
@@ -217,14 +242,19 @@ export const AdminProvider = ({ children }) => {
     
     try {
       const res = await api.get(`/users/${userId}`);
+      // Set user as active by default
+      const userDetails = {
+        ...res.data,
+        is_active: true
+      };
       setUserDetailsCache(prev => ({
         ...prev,
-        [userId]: res.data
+        [userId]: userDetails
       }));
-      return res.data;
+      return userDetails;
     } catch (error) {
       console.error('Error fetching user details:', error);
-      return { username: 'Unknown', email: '', is_admin: false };
+      return { username: 'Unknown', email: '', is_admin: false, is_active: true };
     }
   };
 
@@ -244,6 +274,18 @@ export const AdminProvider = ({ children }) => {
         [questionId]: prev[questionId].map(answer => 
           answer.id === answerId ? { ...answer, is_approved: shouldApprove } : answer
         )
+      }));
+      // Also update in questions if needed
+      setQuestions(prev => prev.map(question => {
+        if (question.id === questionId) {
+          return {
+            ...question,
+            answers: question.answers?.map(ans => 
+              ans.id === answerId ? { ...ans, is_approved: shouldApprove } : ans
+            )
+          };
+        }
+        return question;
       }));
       toast.success(`Answer ${shouldApprove ? 'approved' : 'unapproved'}!`);
     } catch (error) {
@@ -327,6 +369,10 @@ export const AdminProvider = ({ children }) => {
   // Create a report for a question
   const createReport = async (questionId, categoryId, reason) => {
     try {
+      if (user?.is_admin) {
+        toast.error('Admins cannot create reports');
+        return false;
+      }
       setLoading(true);
       const res = await api.post('/reports', {
         question_id: questionId,
@@ -410,9 +456,55 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // Toggle user activation status - Simplified since all users are active by default
+  const toggleUserActivation = async (userId, isActive) => {
+    try {
+      const result = await Swal.fire({
+        title: `Are you sure you want to ${isActive ? 'activate' : 'deactivate'} this user?`,
+        text: "This action cannot be undone!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: `Yes, ${isActive ? 'activate' : 'deactivate'}!`
+      });
+
+      if (!result.isConfirmed) return;
+
+      setLoading(true);
+      // Even though we set is_active to true by default, we'll still allow toggling
+      await api.put(`/users/${userId}/activate`, { is_active: isActive });
+      setUsers(users.map(u => 
+        u.id === userId ? { ...u, is_active: isActive } : u
+      ));
+      setUserDetailsCache(prev => ({
+        ...prev,
+        [userId]: { ...prev[userId], is_active: isActive }
+      }));
+      toast.success(`User ${isActive ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      console.error('Error toggling user activation:', error);
+      toast.error('Failed to update user status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Delete a user
   const deleteUser = async (userId) => {
     try {
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+      });
+
+      if (!result.isConfirmed) return;
+
       setLoading(true);
       await api.delete(`/users/${userId}`);
       setUsers(users.filter(u => u.id !== userId));
@@ -466,7 +558,9 @@ export const AdminProvider = ({ children }) => {
         deleteReport,
         deleteQuestion,
         deleteNotification,
+        updateNotification,
         updateUserAdminStatus,
+        toggleUserActivation,
         deleteUser
       }}
     >
