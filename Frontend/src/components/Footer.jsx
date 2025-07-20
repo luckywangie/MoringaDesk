@@ -51,7 +51,7 @@ function Footer() {
 
       <div className="max-w-4xl mx-auto px-4 mt-4 pt-4 border-t border-indigo-300/20 text-center">
         <p className="text-xs text-indigo-100/70">
-          Made with <span className="text-white">❤️</span> for Moringa students
+          Made with <span className="text-white"></span> for Moringa students
         </p>
       </div>
     </footer>
