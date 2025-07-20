@@ -627,25 +627,11 @@ function QuestionAnswer() {
 
               <div className="flex items-center gap-4 border-t pt-4">
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleQuestionVote('up')}
-                    className={`p-1 rounded-full ${userQuestionVote === 'up' ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600'}`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                  </button>
+                
                   <span className="text-gray-700 font-medium">
-                    {questionVotes.up - questionVotes.down}
+                    
                   </span>
-                  <button
-                    onClick={() => handleQuestionVote('down')}
-                    className={`p-1 rounded-full ${userQuestionVote === 'down' ? 'text-red-600 bg-red-50' : 'text-gray-400 hover:text-red-600'}`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                
                 </div>
                 <span className="text-sm text-gray-500">
                   {answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}
@@ -1129,7 +1115,7 @@ function QuestionAnswer() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Votes</span>
                 <span className="font-medium text-gray-700">
-                  {questionVotes.up - questionVotes.down}
+                  
                 </span>
               </div>
             </div>
