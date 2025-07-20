@@ -18,7 +18,6 @@ const AskQuestion = () => {
 
   const token = localStorage.getItem('token');
 
-  // Fetch categories from backend
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -34,7 +33,6 @@ const AskQuestion = () => {
     fetchCategories();
   }, []);
 
-  // Fetch related questions when title or description changes
   useEffect(() => {
     if ((formData.title.trim().length > 3) || (formData.description.trim().length > 3)) {
       if (debounceTimeout) {
@@ -98,59 +96,68 @@ const AskQuestion = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg">Loading categories...</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex justify-center">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+          <p className="mt-3 text-gray-600">Loading categories...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <ToastContainer />
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col md:flex-row gap-8">
         {/* Main form */}
-        <div className="flex-1 bg-white p-8 rounded-xl shadow-lg">
-          <h2 className="text-2xl font-bold mb-6 text-green-700 text-center">Ask a Question</h2>
+        <div className="flex-1 bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 bg-gradient-to-r from-indigo-600 to-green-500 bg-clip-text text-transparent text-center">
+            Ask a Question
+          </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-gray-700">Title</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
                 placeholder="Enter your question title"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-gray-700">Description</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows="4"
-                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+                rows="5"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
                 placeholder="Describe your question in detail"
                 required
               />
               {isSearching && (
-                <p className="text-sm text-gray-500 mt-1">Searching for similar questions...</p>
+                <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Searching for similar questions...
+                </p>
               )}
             </div>
 
             <div>
-              <label className="block text-gray-700">Category</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
               <select
                 name="category_id"
                 value={formData.category_id}
                 onChange={handleChange}
-                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
                 required
               >
                 <option value="">-- Select Category --</option>
@@ -161,13 +168,13 @@ const AskQuestion = () => {
             </div>
 
             <div>
-              <label className="block text-gray-700">Language</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
               <input
                 type="text"
                 name="language"
                 value={formData.language}
                 onChange={handleChange}
-                className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
                 placeholder="e.g., JavaScript, Python"
                 required
               />
@@ -175,8 +182,11 @@ const AskQuestion = () => {
 
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition duration-200"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
+              </svg>
               Submit Question
             </button>
           </form>
@@ -184,31 +194,56 @@ const AskQuestion = () => {
 
         {/* Related questions sidebar */}
         {(relatedQuestions.length > 0 || isSearching) && (
-          <div className="md:w-80 bg-white p-6 rounded-xl shadow-lg h-fit sticky top-8">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">
+          <div className="md:w-80 bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md h-fit sticky top-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+              </svg>
               Similar Questions
-              {isSearching && <span className="ml-2 text-gray-500">(searching...)</span>}
+              {isSearching && <span className="text-sm text-gray-500">(searching...)</span>}
             </h3>
             
             {relatedQuestions.length > 0 ? (
               <div className="space-y-4">
                 {relatedQuestions.map(question => (
-                  <div key={question.id} className="border-b border-gray-200 pb-3 last:border-0 last:pb-0">
-                    <h4 className="font-medium text-blue-600 hover:text-blue-800 line-clamp-2">
-                      <a href={`/questions/${question.id}`} target="_blank" rel="noopener noreferrer">
+                  <div key={question.id} className="border-b border-gray-200 pb-4 last:border-0 last:pb-0">
+                    <h4 className="font-medium text-indigo-600 hover:text-indigo-800 line-clamp-2">
+                      <a href={`/questions/${question.id}`} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-1 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        </svg>
                         {question.title}
                       </a>
                     </h4>
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">{question.description}</p>
-                    <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
-                      <span>{new Date(question.created_at).toLocaleDateString()}</span>
-                      <span>{question.language}</span>
+                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{question.description}</p>
+                    <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                        </svg>
+                        {new Date(question.created_at).toLocaleDateString()}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                        </svg>
+                        {question.language}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              !isSearching && <p className="text-gray-500">No similar questions found</p>
+              !isSearching && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <p className="text-gray-600 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    No similar questions found
+                  </p>
+                </div>
+              )
             )}
           </div>
         )}
