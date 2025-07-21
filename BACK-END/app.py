@@ -1,10 +1,9 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy  
 from flask_migrate import Migrate 
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
-from models import db
+from extensions import db, mail  # ✅ Import mail/db from extensions.py
 
 # Import all your blueprints
 from views.auth import auth_bp
@@ -18,8 +17,6 @@ from views.tags import tags_bp
 from views.relatedquestions import related_questions_bp
 from views.category import categories_bp
 from views.questiontags import questiontags_bp
-
-
 from views.faqs import faqs_bp
 from views import user_bp 
 
@@ -27,26 +24,34 @@ def create_app():
     app = Flask(__name__)
     CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
 
-    # Use ONE shared secret for everything (dev only)
+    # Shared secret (used for both Flask secret and JWT)
     shared_secret = 'moringa_secret_2025'
     app.config['SECRET_KEY'] = shared_secret
-    app.config['JWT_SECRET_KEY'] = shared_secret  # SECRET_KEY
+    app.config['JWT_SECRET_KEY'] = shared_secret
     app.config['JWT_TOKEN_LOCATION'] = ['headers']
     app.config['JWT_HEADER_NAME'] = 'Authorization'
     app.config['JWT_HEADER_TYPE'] = 'Bearer'
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # 1 hour in seconds
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # 1 hour
 
-    # JWT setup
-    JWTManager(app)
+    # ✅ Flask-Mail configuration (actual Gmail + custom From)
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'devworkzzy@gmail.com'  # ✅ Gmail used to send mail
+    app.config['MAIL_PASSWORD'] = 'ikdd hmwo zphg bvws'    # ✅ Gmail App Password
+    app.config['MAIL_DEFAULT_SENDER'] = ('MoringaDesk Support Team', 'supportteam@moringadesk.com')  # ✅ Sender info
 
-    #Database
+    # Database setup
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+    # ✅ Initialize extensions
     db.init_app(app)
+    mail.init_app(app)
     Migrate(app, db)
+    JWTManager(app)
 
-    # Register all blueprints
+    # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(question_bp)
     app.register_blueprint(answers_bp)
@@ -60,7 +65,6 @@ def create_app():
     app.register_blueprint(faqs_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(questiontags_bp)
-    
 
     @app.route('/')
     def home():

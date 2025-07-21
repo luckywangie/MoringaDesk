@@ -6,19 +6,22 @@ from functools import wraps
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from werkzeug.security import generate_password_hash, check_password_hash
+from urllib.parse import urlencode
+from extensions import mail # Required for app context
+from views.email_utils import send_reset_email  # ✅ Import helper function
 
 # Set up blueprint with prefix
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 # Configuration (Use environment variables in production)
 SECRET_KEY = 'moringa_secret_2025'
-GOOGLE_CLIENT_ID = '894525956684-tuv5vth8aoh7iqpucbj1vmijk93as4e5.apps.googleusercontent.com'  # ✅ Updated Client ID
+GOOGLE_CLIENT_ID = '894525956684-tuv5vth8aoh7iqpucbj1vmijk93as4e5.apps.googleusercontent.com'
 
 # -------------------- JWT Helpers --------------------
 
 def generate_jwt(user):
     payload = {
-        'sub': str(user.id),  # Added for compatibility with JWT libraries that expect a subject
+        'sub': str(user.id),
         'id': user.id,
         'email': user.email,
         'username': user.username,
@@ -59,7 +62,7 @@ def token_required(f):
         return f(user, *args, **kwargs)
     return decorated
 
-# -------------------- Routes --------------------
+# -------------------- Auth Routes --------------------
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -120,7 +123,6 @@ def google_login():
 
         user = User.query.filter_by(email=email).first()
         if not user:
-            # New user from Google
             user = User(username=username, email=email, password='google_oauth')
             db.session.add(user)
             db.session.commit()
@@ -138,7 +140,7 @@ def google_login():
 
     except ValueError:
         return jsonify({'error': 'Invalid Google token'}), 400
-    
+
 @auth_bp.route('/me', methods=['GET'])
 @token_required
 def me(current_user):
@@ -153,3 +155,48 @@ def me(current_user):
 @token_required
 def logout(current_user):
     return jsonify({'success': 'Logged out successfully. Frontend should delete token.'}), 200
+
+# -------------------- Password Reset --------------------
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    email = data.get('email')
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'Email not found'}), 404
+
+    reset_token = jwt.encode({
+        'id': user.id,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    }, SECRET_KEY, algorithm='HS256')
+
+    send_reset_email(user.email, reset_token)  # ✅ Now using the utility function
+
+    return jsonify({'success': 'Reset link sent to email'}), 200
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json()
+    token = data.get('token')
+    new_password = data.get('password')
+
+    if not all([token, new_password]):
+        return jsonify({'error': 'Token and new password are required'}), 400
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 400
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 400
+
+    user = User.query.get(payload['id'])
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user.password = generate_password_hash(new_password)
+    db.session.commit()
+
+    return jsonify({'success': 'Password updated successfully'}), 200

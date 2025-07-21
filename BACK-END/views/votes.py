@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Votes, Answers, User, Notifications  # ✅ Added Notifications
+from models import db, Votes, Answers, User, Notifications
 
 votes_bp = Blueprint('votes_bp', __name__, url_prefix='/api')
 
@@ -13,7 +13,7 @@ def serialize_vote(vote):
         'vote_type': vote.vote_type
     }
 
-# CREATE vote
+# CREATE / TOGGLE vote
 @votes_bp.route('/votes', methods=['POST'])
 @jwt_required()
 def create_vote():
@@ -28,29 +28,35 @@ def create_vote():
     if not answer_id:
         return jsonify({'error': 'answer_id is required'}), 400
 
-    # Check for existing vote
     existing = Votes.query.filter_by(user_id=current_user, answer_id=answer_id).first()
+
     if existing:
-        return jsonify({'error': 'You already voted on this answer'}), 400
+        if existing.vote_type == vote_type:
+            db.session.delete(existing)
+            db.session.commit()
+            return jsonify({'success': 'Vote removed'}), 200
+        else:
+            existing.vote_type = vote_type
+            db.session.commit()
+            return jsonify({'success': 'Vote updated', 'vote': serialize_vote(existing)}), 200
+    else:
+        vote = Votes(user_id=current_user, answer_id=answer_id, vote_type=vote_type)
+        db.session.add(vote)
 
-    vote = Votes(user_id=current_user, answer_id=answer_id, vote_type=vote_type)
-    db.session.add(vote)
+        # Notify the owner of the answer
+        answer = Answers.query.get(answer_id)
+        if answer and answer.user_id != current_user:
+            voter = User.query.get(current_user)
+            notif_msg = f'{voter.username} {vote_type}voted your answer.'
+            notification = Notifications(
+                user_id=answer.user_id,
+                type='vote',
+                message=notif_msg
+            )
+            db.session.add(notification)
 
-    # ✅ Notify the owner of the answer (if not voting on their own answer)
-    answer = Answers.query.get(answer_id)
-    if answer and answer.user_id != current_user:
-        voter = User.query.get(current_user)
-        notif_msg = f'{voter.username} {vote_type}voted your answer.'
-        notification = Notifications(
-            user_id=answer.user_id,
-            type='vote',
-            message=notif_msg
-        )
-        db.session.add(notification)
-
-    db.session.commit()
-
-    return jsonify({'success': 'Vote created', 'vote': serialize_vote(vote)}), 201
+        db.session.commit()
+        return jsonify({'success': 'Vote created', 'vote': serialize_vote(vote)}), 201
 
 # GET all votes
 @votes_bp.route('/votes', methods=['GET'])

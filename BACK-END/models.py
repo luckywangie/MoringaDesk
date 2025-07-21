@@ -1,7 +1,5 @@
-from flask_sqlalchemy import SQLAlchemy
+from extensions import db  # ✅ Use the shared db instance
 from datetime import datetime
-
-db = SQLAlchemy()
 
 # Association Table for many-to-many User <-> Tags
 user_tags = db.Table('user_tags',
@@ -90,10 +88,7 @@ class Votes(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     answer_id = db.Column(db.Integer, db.ForeignKey('answers.id'))
     vote_type = db.Column(db.String(10))  # 'up' or 'down'
-
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'answer_id', name='unique_user_answer_vote'),
-    )
+    # ✅ Removed the unique constraint to allow vote updates freely
 
 
 class RelatedQuestions(db.Model):

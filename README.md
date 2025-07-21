@@ -1,25 +1,54 @@
-# Stack overflow clone Manager
-#### The app is a stackoverflow clone, 20/06/2025
-#### **By Kelvin Kipchumba**
+# MORINGA DESK
+#### A Q&A platform tailored for Moringa School students.
+#### **Lucky,Grace,Timothy,Ibrahim**
 ## Description
-Just a reference
-The application includes a  landing page which shows the popular colections and a footer with contact details. 
-There is also a shop, login and register pages.
+MoringaDesk is a student-focused Q&A platform that curates technical problems commonly faced by learners at Moringa School.
+It enables students to ask questions, provide solutions, vote on answers, and follow up on discussions relevant to their curriculum and cohort.
+Each question can have multiple answers, tags, and related problems, reducing duplication and improving access to help.
 
+It also includes a landing page with featured problems, authentication, role-based admin controls, and a fully responsive frontend.
 # Features / User Stories
-A User Can:
-- Register an account with a username, email, and password.
-- Login to their account using their credentials.
-- Update their profile details
-- Post a new question.
+As a Student, you can:
+--Register and log in securely (JWT & Google OAuth).
 
-An Admin Can:
-- Login to the admin panel using credentials.
-- View a list of all users.
-- Approve unapproved questions.
-- Hide irrelevant or inappropriate answers.
-- View and manage all questions, answers, and votes on the platform.
-- Delete or update any content (questions, answers, or users).
+--Raise technical questions categorized by tags (e.g., Language, Logic, Stage).
+
+--View and reply to questions posted by others.
+
+--Vote on solutions to help highlight the best ones.
+
+--Follow questions to receive updates on replies or votes.
+
+--Mark one answer as "Most Useful" in your thread.
+
+--See related questions when posting to avoid duplication.
+
+--Search and browse questions by tags or keywords.
+
+--Receive notifications when:
+
+  Your question gets a vote.
+
+  Someone replies to your post.
+
+  A response is added to a followed question.
+
+As an Admin, you can:
+--Manage all users (view, update, delete).
+
+--Approve or hide questions and answers.
+
+--Monitor flagged content for moderation.
+
+--Create and update Frequently Asked Questions (FAQs).
+
+--View reports/metrics on:
+
+--Frequently asked categories
+
+--Top contributors
+
+--Activity trends across cohorts
 
 
 ## Setup/Installation Requirements
@@ -53,10 +82,18 @@ The application works perfectly well, no bugs.
 
 
 ## Support and contact details
-email :: kelvinkipchumba002@gmail.com
+email :: 
 
 ### License
-Licenced under the MIT license
+Copyright <2025> <Lucky,Grace,Timothy,Ibrahim>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
 
 
 
