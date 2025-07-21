@@ -24,7 +24,9 @@ import Profile from './pages/Profile';
 import QuestionAnswer from './pages/QuestionAnswer';
 import Questions from './pages/Questions';
 import RelatedQuestions from './pages/RelatedQuestions';
-import Analytics from './pages/Analytics'; // ✅ Added import
+import Analytics from './pages/Analytics';
+import ForgotPassword from './pages/ForgotPassword'; 
+import ResetPassword from './pages/ResetPassword'; 
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -53,7 +55,10 @@ function App() {
                   <Route path="/category-manager" element={<CategoryManager />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/related-questions" element={<RelatedQuestions />} />
-                  <Route path="/admin/analytics" element={<Analytics />} /> {/* ✅ Added route */}
+                  <Route path="/admin/analytics" element={<Analytics />} />
+                  {/* Add these new routes */}
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                 </Routes>
               </main>
 
