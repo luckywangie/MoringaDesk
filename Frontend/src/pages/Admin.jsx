@@ -407,30 +407,38 @@ const Admin = () => {
   };
 
   // Filtered lists with nullish coalescing for safe .toLowerCase() calls
-  const filteredQuestions = questions.filter(q =>
-    (q.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (q.description || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+// For questions
+const filteredQuestions = questions.filter(q =>
+  (q.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (q.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (q.language || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (getUserName(q.user_id) || '').toLowerCase().includes(searchTerm.toLowerCase()) // Ensure getUserName also returns a string or handled
+);
 
-  const filteredReports = reports.filter(r =>
-    (r.reason || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (r.question?.title || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+// For reports
+const filteredReports = reports.filter(r =>
+  (r.reason || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (r.question?.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (getUserName(r.user_id) || '').toLowerCase().includes(searchTerm.toLowerCase()) // Assuming reports have a user_id
+);
 
-  const filteredNotifications = notifications.filter(n =>
-    (n.message || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ((userDetailsCache[n.user_id]?.username || '')).toLowerCase().includes(searchTerm.toLowerCase())
-  );
+// For notifications
+const filteredNotifications = notifications.filter(n =>
+  (n.message || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (getUserName(n.user_id) || '').toLowerCase().includes(searchTerm.toLowerCase()) // Ensure getUserName always returns a string
+);
 
-  const filteredUsers = users.filter(u =>
-    (u.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+// For users
+const filteredUsers = users.filter(u =>
+  (u.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+);
 
-  const filteredFaqs = faqs.filter(faq =>
-    (faq.question || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (faq.answer || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+// For FAQs
+const filteredFaqs = faqs.filter(faq =>
+  (faq.question || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (faq.answer || '').toLowerCase().includes(searchTerm.toLowerCase())
+);
 
   const getUserName = (userId) => {
     return userDetailsCache[userId]?.username || 'Loading...';
