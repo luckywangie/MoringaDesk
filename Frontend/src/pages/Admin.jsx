@@ -406,11 +406,7 @@ const Admin = () => {
     }
   };
 
-  // Filtered lists with nullish coalescing for safe .toLowerCase() calls
-// Assuming these are defined in your component that consumes AdminContext
-// e.g., in your Admin.js or similar file:
-// const { questions, reports, notifications, users, faqs, getUserName } = useAdmin();
-// const [searchTerm, setSearchTerm] = useState('');
+  
 
 // --- FILTER FOR QUESTIONS ---
 const filteredQuestions = questions.filter(q => {
@@ -442,14 +438,11 @@ const filteredReports = reports.filter(r => {
          questionTitle.includes(lowerCaseSearchTerm) ||
          userName.includes(lowerCaseSearchTerm);
 });
-
 // --- FILTER FOR NOTIFICATIONS ---
 const filteredNotifications = notifications.filter(n => {
-  // Ensure all properties potentially being searched are handled
   const message = (n.message || '').toLowerCase();
-  const userName = (getUserName(n.user_id) || '').toLowerCase(); // Assuming notification has a user_id
-
-  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+  const userName = (getUserName(n.user_id) || '').toLowerCase();
+  const lowerCaseSearchTerm = (searchTerm || '').toLowerCase();
 
   return message.includes(lowerCaseSearchTerm) ||
          userName.includes(lowerCaseSearchTerm);
@@ -457,11 +450,9 @@ const filteredNotifications = notifications.filter(n => {
 
 // --- FILTER FOR USERS ---
 const filteredUsers = users.filter(u => {
-  // Ensure all properties potentially being searched are handled
   const username = (u.username || '').toLowerCase();
   const email = (u.email || '').toLowerCase();
-
-  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+  const lowerCaseSearchTerm = (searchTerm || '').toLowerCase();
 
   return username.includes(lowerCaseSearchTerm) ||
          email.includes(lowerCaseSearchTerm);
@@ -469,15 +460,14 @@ const filteredUsers = users.filter(u => {
 
 // --- FILTER FOR FAQs ---
 const filteredFaqs = faqs.filter(faq => {
-  // Ensure all properties potentially being searched are handled
   const question = (faq.question || '').toLowerCase();
   const answer = (faq.answer || '').toLowerCase();
-
-  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+  const lowerCaseSearchTerm = (searchTerm || '').toLowerCase();
 
   return question.includes(lowerCaseSearchTerm) ||
          answer.includes(lowerCaseSearchTerm);
 });
+
 
   const getUserName = (userId) => {
     return userDetailsCache[userId]?.username || 'Loading...';
