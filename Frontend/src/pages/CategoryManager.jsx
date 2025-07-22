@@ -58,14 +58,14 @@ const CategoryManager = () => {
         body: JSON.stringify({ category_name: newCategory }),
       });
 
-      const data = await res.json();
       if (!res.ok) {
+        const data = await res.json();
         throw new Error(data.message || 'Failed to create category');
       }
 
       toast.success('Category created successfully');
-      setCategories([...categories, data]);
       setNewCategory('');
+      fetchCategories(); // Refresh the list after creation
     } catch (error) {
       console.error('Create error:', error);
       toast.error(error.message);
@@ -107,7 +107,7 @@ const CategoryManager = () => {
       }
 
       toast.success('Category deleted successfully');
-      setCategories(categories.filter((c) => c.id !== id));
+      fetchCategories(); // Refresh the list after deletion
     } catch (error) {
       console.error('Delete error:', error);
       toast.error(error.message);
@@ -152,13 +152,8 @@ const CategoryManager = () => {
         throw new Error(data.message || 'Failed to update category');
       }
 
-      const data = await res.json();
       toast.success('Category updated successfully');
-      setCategories(
-        categories.map((c) =>
-          c.id === id ? data : c
-        )
-      );
+      fetchCategories(); // Refresh the list after update
       cancelEdit();
     } catch (error) {
       console.error('Update error:', error);
@@ -175,7 +170,6 @@ const CategoryManager = () => {
           Categories
         </h2>
 
-        {/* Create Form - Only shown to logged in users */}
         {user && (
           <div className="flex items-center gap-3 mb-6">
             <input
@@ -211,7 +205,6 @@ const CategoryManager = () => {
           </div>
         )}
 
-        {/* Categories List */}
         {loading && categories.length === 0 ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
