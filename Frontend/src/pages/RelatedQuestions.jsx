@@ -20,7 +20,7 @@ const RelatedQuestions = () => {
   const fetchRelatedQuestions = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/relatedquestions', {
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/relatedquestions', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRelatedQuestions(res.data);
@@ -33,7 +33,7 @@ const RelatedQuestions = () => {
 
   const fetchAllQuestions = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/questions');
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/questions');
       setQuestions(res.data);
     } catch (err) {
       toast.error('Failed to fetch all questions');
@@ -53,7 +53,7 @@ const RelatedQuestions = () => {
 
     try {
       await axios.post(
-        'http://localhost:5000/api/relatedquestions',
+        'https://moringadesk-ckj3.onrender.com/api/relatedquestions',
         {
           question_id: selected.q1,
           related_question_id: selected.q2,
@@ -77,7 +77,7 @@ const RelatedQuestions = () => {
   const handleUpdate = async () => {
     try {
       await axios.put(
-        `http://localhost:5000/api/relatedquestions/${editingId}`,
+        `https://moringadesk-ckj3.onrender.com/api/relatedquestions/${editingId}`,
         {
           question_id: selected.q1,
           related_question_id: selected.q2,
@@ -95,7 +95,7 @@ const RelatedQuestions = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/relatedquestions/${id}`, {
+      await axios.delete(`https://moringadesk-ckj3.onrender.com/api/relatedquestions/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Related question deleted');

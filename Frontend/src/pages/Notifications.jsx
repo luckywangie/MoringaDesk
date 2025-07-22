@@ -11,7 +11,7 @@ const Notifications = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/notifications/me', {
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/notifications/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -36,7 +36,7 @@ const Notifications = () => {
 
   const toggleRead = async (id, isRead) => {
     try {
-      await axios.put(`http://localhost:5000/api/notifications/${id}`, { is_read: !isRead }, {
+      await axios.put(`https://moringadesk-ckj3.onrender.com/api/notifications/${id}`, { is_read: !isRead }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchNotifications();
@@ -47,7 +47,7 @@ const Notifications = () => {
 
   const deleteNotification = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/notifications/${id}`, {
+      await axios.delete(`https://moringadesk-ckj3.onrender.com/api/notifications/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -58,7 +58,7 @@ const Notifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      await axios.put('http://localhost:5000/api/notifications/mark-all-read', {}, {
+      await axios.put('https://moringadesk-ckj3.onrender.com/api/notifications/mark-all-read', {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchNotifications();

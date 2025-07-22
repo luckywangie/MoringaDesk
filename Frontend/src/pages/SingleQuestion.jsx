@@ -11,8 +11,8 @@ function QuestionAnswer() {
   useEffect(() => {
     const fetchQuestionAndAnswer = async () => {
       try {
-        const questionRes = await axios.get(`http://127.0.0.1:5000/api/questions/${id}`);
-        const answerRes = await axios.get(`http://localhost:5000/api/answers/${id}`);
+        const questionRes = await axios.get(`https://moringadesk-ckj3.onrender.com/api/questions/${id}`);
+        const answerRes = await axios.get(`https://moringadesk-ckj3.onrender.com/api/answers/${id}`);
 
         setQuestion(questionRes.data);
         setAnswer(answerRes.data);

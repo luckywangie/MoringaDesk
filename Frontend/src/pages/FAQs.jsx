@@ -32,7 +32,7 @@ const FAQs = () => {
 
   const fetchFaqs = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/faqs');
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/faqs');
       setFaqs(res.data);
       setFilteredFaqs(res.data);
     } catch (err) {
@@ -52,12 +52,12 @@ const FAQs = () => {
     e.preventDefault();
     try {
       if (editingId) {
-        await axios.put(`http://localhost:5000/api/faqs/${editingId}`, form, {
+        await axios.put(`https://moringadesk-ckj3.onrender.com/api/faqs/${editingId}`, form, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success('FAQ updated');
       } else {
-        await axios.post('http://localhost:5000/api/faqs', form, {
+        await axios.post('https://moringadesk-ckj3.onrender.com/api/faqs', form, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success('FAQ created');
@@ -77,7 +77,7 @@ const FAQs = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/faqs/${id}`, {
+      await axios.delete(`https://moringadesk-ckj3.onrender.com/api/faqs/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success('FAQ deleted');

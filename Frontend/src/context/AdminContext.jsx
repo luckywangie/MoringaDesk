@@ -22,7 +22,7 @@ export const AdminProvider = ({ children }) => {
   const [questionDetailsCache, setQuestionDetailsCache] = useState({});
 
   const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'https://moringadesk-ckj3.onrender.com/api',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

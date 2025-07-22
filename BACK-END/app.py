@@ -22,7 +22,7 @@ from views import user_bp
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, supports_credentials=True, origins=["http://localhost:5173"])
+    CORS(app)  
 
     # Shared secret (used for both Flask secret and JWT)
     shared_secret = 'moringa_secret_2025'
@@ -75,5 +75,5 @@ def create_app():
 app = create_app() 
 
 if __name__ == '__main__':
-    app = create_app()
+    
     app.run(debug=True)

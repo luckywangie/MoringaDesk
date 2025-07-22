@@ -48,7 +48,7 @@ const Dashboard = () => {
     if (userMap[userId]) return userMap[userId];
     
     try {
-      const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+      const res = await axios.get(`https://moringadesk-ckj3.onrender.com/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserMap(prev => ({ ...prev, [userId]: res.data.username }));
@@ -61,7 +61,7 @@ const Dashboard = () => {
 
   const fetchAllQuestions = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/questions');
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/questions');
       setAllQuestions(res.data);
       
       const uniqueUserIds = [...new Set(res.data.map(q => q.user_id))];
@@ -77,7 +77,7 @@ const Dashboard = () => {
 
   const fetchUserQuestions = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/questions', {
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/questions', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const userQs = res.data.filter(q => q.user_id === user.id);

@@ -49,7 +49,7 @@ function QuestionAnswer() {
   const fetchQuestion = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/questions/${id}`);
+      const res = await axios.get(`https://moringadesk-ckj3.onrender.com/api/questions/${id}`);
       const questionData = res.data;
       const username = await fetchUser(questionData.user_id);
       setUsernames(prev => ({ ...prev, [questionData.user_id]: username }));
@@ -64,7 +64,7 @@ function QuestionAnswer() {
   const fetchAnswers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/questions/${id}/answers/is_approved`);
+      const res = await axios.get(`https://moringadesk-ckj3.onrender.com/api/questions/${id}/answers/is_approved`);
       const answersData = res.data;
       
       const usernamePromises = answersData.map(answer => 
@@ -99,7 +99,7 @@ function QuestionAnswer() {
 
   const fetchVotes = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/votes', { headers });
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/votes', { headers });
       const voteMap = {};
       res.data.forEach((vote) => {
         if (!voteMap[vote.answer_id]) voteMap[vote.answer_id] = { up: 0, down: 0 };
@@ -115,7 +115,7 @@ function QuestionAnswer() {
     if (!token) return;
     
     try {
-      const res = await axios.get('http://localhost:5000/api/votes', { headers });
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/votes', { headers });
       const userVoteMap = {};
       res.data.forEach(vote => {
         if (vote.user_id === currentUserId) {
@@ -130,14 +130,14 @@ function QuestionAnswer() {
 
   const fetchQuestionVotes = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/questions/${id}/votes`, { headers });
+      const res = await axios.get(`https://moringadesk-ckj3.onrender.com/api/questions/${id}/votes`, { headers });
       setQuestionVotes({
         up: res.data.upvotes || 0,
         down: res.data.downvotes || 0
       });
 
       if (token) {
-        const userVoteRes = await axios.get(`http://localhost:5000/api/questions/${id}/uservote`, { headers });
+        const userVoteRes = await axios.get(`https://moringadesk-ckj3.onrender.com/api/questions/${id}/uservote`, { headers });
         setUserQuestionVote(userVoteRes.data.vote_type || null);
       }
     } catch (err) {
@@ -147,7 +147,7 @@ function QuestionAnswer() {
 
   const fetchFollowups = async (answerId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/followups`);
+      const res = await axios.get(`https://moringadesk-ckj3.onrender.com/api/followups`);
       const allFollowups = res.data;
       const relevantFollowups = allFollowups.filter(f => 
         (f.answer_id === answerId) || (f.question_id === parseInt(id) && !f.answer_id)
@@ -172,7 +172,7 @@ function QuestionAnswer() {
 
   const fetchReportCategories = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/categories');
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/categories');
       setReportCategories(res.data);
       if (res.data.length > 0) {
         setSelectedCategory(res.data[0].id);
@@ -186,7 +186,7 @@ function QuestionAnswer() {
   const fetchRelatedQuestions = async () => {
     setLoadingRelated(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/relatedquestions', { headers });
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/relatedquestions', { headers });
       const allRelations = res.data;
       
       // Get all unique question IDs from the relations
@@ -199,7 +199,7 @@ function QuestionAnswer() {
       // Fetch details for each related question
       const questionsData = await Promise.all(
         Array.from(questionIds).map(qId => 
-          axios.get(`http://localhost:5000/api/questions/${qId}`)
+          axios.get(`https://moringadesk-ckj3.onrender.com/api/questions/${qId}`)
             .then(res => res.data)
             .catch(() => null)
         )
@@ -216,7 +216,7 @@ function QuestionAnswer() {
 
   const fetchUser = async (userId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/users/${userId}`, { headers });
+      const res = await axios.get(`https://moringadesk-ckj3.onrender.com/api/users/${userId}`, { headers });
       return res.data.username;
     } catch (err) {
       console.error('Failed to fetch user', err);
@@ -233,7 +233,7 @@ function QuestionAnswer() {
     try {
       if (userQuestionVote === voteType) {
         // Remove vote
-        await axios.delete(`http://localhost:5000/api/questions/${id}/vote`, { headers });
+        await axios.delete(`https://moringadesk-ckj3.onrender.com/api/questions/${id}/vote`, { headers });
         setQuestionVotes(prev => ({
           up: voteType === 'up' ? prev.up - 1 : prev.up,
           down: voteType === 'down' ? prev.down - 1 : prev.down
@@ -243,7 +243,7 @@ function QuestionAnswer() {
       } else if (userQuestionVote) {
         // Change vote
         await axios.put(
-          `http://localhost:5000/api/questions/${id}/vote`,
+          `https://moringadesk-ckj3.onrender.com/api/questions/${id}/vote`,
           { vote_type: voteType },
           { headers }
         );
@@ -256,7 +256,7 @@ function QuestionAnswer() {
       } else {
         // New vote
         await axios.post(
-          `http://localhost:5000/api/questions/${id}/vote`,
+          `https://moringadesk-ckj3.onrender.com/api/questions/${id}/vote`,
           { vote_type: voteType },
           { headers }
         );
@@ -294,7 +294,7 @@ function QuestionAnswer() {
     try {
       setLoading(true);
       await axios.post(
-        'http://localhost:5000/api/reports',
+        'https://moringadesk-ckj3.onrender.com/api/reports',
         {
           category_id: selectedCategory,
           question_id: questionId,
@@ -324,11 +324,11 @@ function QuestionAnswer() {
         const voteId = await getVoteId(answerId);
         if (voteId) {
           if (userVotes[answerId] === voteType) {
-            await axios.delete(`http://localhost:5000/api/votes/${voteId}`, { headers });
+            await axios.delete(`https://moringadesk-ckj3.onrender.com/api/votes/${voteId}`, { headers });
             toast.success('Vote removed');
           } else {
             await axios.put(
-              `http://localhost:5000/api/votes/${voteId}`,
+              `https://moringadesk-ckj3.onrender.com/api/votes/${voteId}`,
               { vote_type: voteType },
               { headers }
             );
@@ -337,7 +337,7 @@ function QuestionAnswer() {
         }
       } else {
         await axios.post(
-          'http://localhost:5000/api/votes',
+          'https://moringadesk-ckj3.onrender.com/api/votes',
           { answer_id: answerId, vote_type: voteType },
           { headers }
         );
@@ -353,7 +353,7 @@ function QuestionAnswer() {
 
   const getVoteId = async (answerId) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/votes', { headers });
+      const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/votes', { headers });
       const vote = res.data.find(v => v.answer_id === answerId && v.user_id === currentUserId);
       return vote?.id;
     } catch (err) {
@@ -372,7 +372,7 @@ function QuestionAnswer() {
     try {
       setLoading(true);
       await axios.post(
-        `http://localhost:5000/api/questions/${id}/answers`,
+        `https://moringadesk-ckj3.onrender.com/api/questions/${id}/answers`,
         { content: answerContent },
         { headers }
       );
@@ -405,7 +405,7 @@ function QuestionAnswer() {
     try {
       setLoading(true);
       await axios.put(
-        `http://localhost:5000/api/answers/${editingAnswerId}`,
+        `https://moringadesk-ckj3.onrender.com/api/answers/${editingAnswerId}`,
         { content: editContent },
         { headers }
       );
@@ -426,7 +426,7 @@ function QuestionAnswer() {
     try {
       setLoading(true);
       await axios.delete(
-        `http://localhost:5000/api/answers/${answerId}`,
+        `https://moringadesk-ckj3.onrender.com/api/answers/${answerId}`,
         { headers }
       );
       toast.success('Answer deleted successfully!');
@@ -452,7 +452,7 @@ function QuestionAnswer() {
     try {
       setLoading(true);
       await axios.post(
-        'http://localhost:5000/api/followups',
+        'https://moringadesk-ckj3.onrender.com/api/followups',
         {
           question_id: id,
           answer_id: answerId,
@@ -490,7 +490,7 @@ function QuestionAnswer() {
     try {
       setLoading(true);
       await axios.put(
-        `http://localhost:5000/api/followups/${editingFollowupId}`,
+        `https://moringadesk-ckj3.onrender.com/api/followups/${editingFollowupId}`,
         { content: editFollowupContent },
         { headers }
       );
@@ -518,7 +518,7 @@ function QuestionAnswer() {
     try {
       setLoading(true);
       await axios.delete(
-        `http://localhost:5000/api/followups/${followupId}`,
+        `https://moringadesk-ckj3.onrender.com/api/followups/${followupId}`,
         { headers }
       );
       toast.success('Follow-up deleted successfully!');

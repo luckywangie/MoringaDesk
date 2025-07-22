@@ -28,7 +28,7 @@ const Questions = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/categories');
+        const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/categories');
         const categoryMap = {};
         res.data.forEach(cat => {
           categoryMap[cat.id] = cat.category_name;
@@ -45,11 +45,11 @@ const Questions = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        let url = 'http://localhost:5000/api/questions';
+        let url = 'https://moringadesk-ckj3.onrender.com/api/questions';
         if (filter.status === 'solved') {
-          url = 'http://localhost:5000/api/questions/is_solved';
+          url = 'https://moringadesk-ckj3.onrender.com/is_solved';
         } else if (filter.status === 'unsolved') {
-          url = 'http://localhost:5000/api/questions/is_unsolved';
+          url = 'https://moringadesk-ckj3.onrender.com/api/questions/is_unsolved';
         }
         
         const res = await axios.get(url);
@@ -64,7 +64,7 @@ const Questions = () => {
           qs.map(async (q) => {
             if (!nameMap[q.user_id]) {
               try {
-                const userRes = await axios.get(`http://localhost:5000/api/users/${q.user_id}`, {
+                const userRes = await axios.get(`https://moringadesk-ckj3.onrender.com/api/users/${q.user_id}`, {
                   headers: { Authorization: `Bearer ${token}` },
                 });
                 nameMap[q.user_id] = userRes.data.username;
@@ -115,7 +115,7 @@ const Questions = () => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:5000/api/questions/${id}`, {
+        await axios.delete(`https://moringadesk-ckj3.onrender.com/api/questions/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
@@ -132,7 +132,7 @@ const Questions = () => {
   const toggleSolvedStatus = async (questionId, currentStatus) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/questions/${questionId}/is_solved`,
+        `https://moringadesk-ckj3.onrender.com/api/questions/${questionId}/is_solved`,
         { is_solved: !currentStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -180,7 +180,7 @@ const Questions = () => {
   const handleUpdateQuestion = async (questionId) => {
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/questions/${questionId}`,
+        `https://moringadesk-ckj3.onrender.com/api/questions/${questionId}`,
         editFormData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -21,7 +21,7 @@ const AskQuestion = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/categories');
+        const res = await axios.get('https://moringadesk-ckj3.onrender.com/api/categories');
         setCategories(res.data);
       } catch (err) {
         toast.error('Failed to load categories');
@@ -58,7 +58,7 @@ const AskQuestion = () => {
     try {
       const searchQuery = `${formData.title} ${formData.description}`.trim();
       const res = await axios.get(
-        `http://localhost:5000/api/questions?search=${encodeURIComponent(searchQuery)}`
+        `https://moringadesk-ckj3.onrender.com/api/questions?search=${encodeURIComponent(searchQuery)}`
       );
       setRelatedQuestions(res.data);
     } catch (err) {
@@ -82,7 +82,7 @@ const AskQuestion = () => {
 
     try {
       const res = await axios.post(
-        'http://localhost:5000/api/questions',
+        'https://moringadesk-ckj3.onrender.com/api/questions',
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   // Register
   const register = async ({ username, email, password }) => {
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/auth/register', {
+      const res = await fetch('https://moringadesk-ckj3.onrender.com/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
   // Login
   const login = async (email, password) => {
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/auth/login', {
+      const res = await fetch('https://moringadesk-ckj3.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
   //  Google Login Handler
   const google_login_user = async (googleToken) => {
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/auth/google-login', {
+      const res = await fetch('https://moringadesk-ckj3.onrender.com/api/auth/google-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: googleToken }),
@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }) => {
   // Update profile
   const updateProfile = async (userId, updatedData) => {
     try {
-      const res = await fetch(`http://127.0.0.1:5000/api/users/${userId}`, {
+      const res = await fetch(`https://moringadesk-ckj3.onrender.com/api/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }) => {
   // Delete profile
   const deleteProfile = async (userId) => {
     try {
-      const res = await fetch(`http://127.0.0.1:5000/api/users/${userId}`, {
+      const res = await fetch(`https://moringadesk-ckj3.onrender.com/api/users/${userId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,

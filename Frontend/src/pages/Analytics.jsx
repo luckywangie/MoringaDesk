@@ -32,7 +32,7 @@ const Analytics = () => {
   const fetchUserData = async (userId) => {
     if (!userId) return null;
     try {
-      const res = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+      const res = await axios.get(`https://moringadesk-ckj3.onrender.com/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserMap(prev => ({ ...prev, [userId]: res.data }));
@@ -46,7 +46,7 @@ const Analytics = () => {
   // Fetch questions by a specific user
   const fetchUserQuestions = async (userId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/questions?user_id=${userId}`);
+      const res = await axios.get(`https://moringadesk-ckj3.onrender.com/api/questions?user_id=${userId}`);
       setUserQuestions(res.data);
     } catch (err) {
       console.error(`Failed to fetch questions for user ${userId}:`, err);
@@ -76,7 +76,7 @@ const Analytics = () => {
       setError(null);
       
       // Fetch questions with no filters to get all questions
-      const questionsRes = await axios.get('http://localhost:5000/api/questions');
+      const questionsRes = await axios.get('https://moringadesk-ckj3.onrender.com/api/questions');
       setAllQuestions(questionsRes.data);
       
       // Get unique user IDs from questions
