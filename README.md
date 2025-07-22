@@ -65,8 +65,8 @@ As an Admin, you can:
 
 
 ## Deployment
-* You can view the frontend live on [Stack overflow frontend](https://extraordinary-hummingbird-a3ca9c.netlify.app/)
-* You can view the flask backend here [Stack overflow frontend](https://stack-overflow-clone-tybm.onrender.com)
+* You can view the frontend live on [https://funny-sprite-8e31be.netlify.app/]
+* You can view the flask backend here [https://moringadesk-ckj3.onrender.com]
 
 ## Known Bugs
 The application works perfectly well, no bugs.
@@ -82,7 +82,7 @@ The application works perfectly well, no bugs.
 
 
 ## Support and contact details
-email :: 
+email : wangiemamati@gmail.com, tchemweno18@gmail.com, salmarn.codes@gmail.com, nduta6466@gmail.com
 
 ### License
 Copyright <2025> <Lucky,Grace,Timothy,Ibrahim>
