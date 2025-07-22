@@ -406,10 +406,11 @@ const Admin = () => {
     }
   };
 
-  const filteredQuestions = questions.filter(q =>
-    q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    q.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+ const filteredQuestions = questions.filter(q =>
+  (q.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+  (q.description || "").toLowerCase().includes(searchTerm.toLowerCase())
+);
+
 
   const filteredReports = reports.filter(r =>
     r.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
