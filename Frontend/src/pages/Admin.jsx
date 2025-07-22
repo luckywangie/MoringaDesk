@@ -13,7 +13,7 @@ const FollowupForm = ({ answerId, onFollowupCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
-    
+
     const success = await createFollowup(answerId, content);
     if (success) {
       setContent('');
@@ -67,7 +67,7 @@ const ReportForm = ({ questionId, onReportSubmit, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!reason.trim() || !categoryId) return;
-    
+
     const success = await onReportSubmit(questionId, categoryId, reason);
     if (success) {
       setReason('');
@@ -313,7 +313,7 @@ const Admin = () => {
     toggleUserActivation,
     deleteUser
   } = useAdmin();
-  
+
   const { user, logout } = useUser();
   const navigate = useNavigate();
   const [activeQuestionId, setActiveQuestionId] = useState(null);
@@ -406,29 +406,30 @@ const Admin = () => {
     }
   };
 
- const filteredQuestions = questions.filter(q =>
-  (q.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (q.description || "").toLowerCase().includes(searchTerm.toLowerCase())
-);
+  // Filtered lists with nullish coalescing for safe .toLowerCase() calls
+  const filteredQuestions = questions.filter(q =>
+    (q.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (q.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const filteredReports = reports.filter(r =>
-    r.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (r.question?.title && r.question.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    (r.reason || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (r.question?.title || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredNotifications = notifications.filter(n =>
-    n.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (userDetailsCache[n.user_id]?.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    (n.message || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ((userDetailsCache[n.user_id]?.username || '')).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredUsers = users.filter(u =>
-    u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (u.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredFaqs = faqs.filter(faq =>
-    faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
+    (faq.question || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (faq.answer || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getUserName = (userId) => {
@@ -441,7 +442,7 @@ const Admin = () => {
         getUserDetails(n.user_id);
       }
     });
-  }, [notifications]);
+  }, [notifications, userDetailsCache, getUserDetails]); // Added dependencies for useEffect
 
   if (!user?.is_admin) {
     return (
@@ -468,7 +469,7 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8 py-8">
       <ToastContainer />
-      
+
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6 transition-all duration-200 hover:shadow-md">
@@ -578,13 +579,13 @@ const Admin = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="mt-6 flex justify-between items-center">
                     <button
                       onClick={() => toggleAnswers(question.id)}
                       className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
-                        activeQuestionId === question.id 
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                        activeQuestionId === question.id
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                           : 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
                       }`}
                     >
@@ -593,7 +594,7 @@ const Admin = () => {
                       </svg>
                       {activeQuestionId === question.id ? 'Hide Answers' : `Show Answers (${question.answers_count || 0})`}
                     </button>
-                    
+
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleDeleteQuestion(question.id)}
@@ -650,8 +651,8 @@ const Admin = () => {
                               <button
                                 onClick={() => toggleAnswerApproval(answer.id, question.id, !answer.is_approved)}
                                 className={`px-3 py-1 rounded-lg text-sm font-medium flex items-center gap-1 ${
-                                  answer.is_approved 
-                                    ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' 
+                                  answer.is_approved
+                                    ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                                     : 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
                                 }`}
                               >
@@ -670,19 +671,19 @@ const Admin = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                   <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
                                 </svg>
-                                {expandedFollowups[answer.id] ? 'Hide Follow-ups' : 'Show Follow-ups'} 
+                                {expandedFollowups[answer.id] ? 'Hide Follow-ups' : 'Show Follow-ups'}
                                 {followupsByAnswer[answer.id]?.length > 0 && (
                                   <span className="text-gray-500 ml-1">({followupsByAnswer[answer.id].length})</span>
                                 )}
                               </button>
-                              
+
                               {expandedFollowups[answer.id] && (
                                 <div className="mt-3 ml-4 pl-4 border-l-2 border-indigo-200">
-                                  <FollowupForm 
-                                    answerId={answer.id} 
+                                  <FollowupForm
+                                    answerId={answer.id}
                                     onFollowupCreated={() => fetchFollowupsForAnswer(answer.id)}
                                   />
-                                  
+
                                   {followupsByAnswer[answer.id]?.length > 0 ? (
                                     followupsByAnswer[answer.id].map(followup => (
                                       <div key={followup.id} className="bg-white rounded-lg p-3 my-2 shadow-sm border border-gray-200">
@@ -704,7 +705,7 @@ const Admin = () => {
                                           </div>
                                           <button
                                             onClick={() => deleteFollowup(followup.id, answer.id)}
-                                            className="text-xs text-red-600 hover:text-red-800"
+                                            className="px-2 py-0.5 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-xs"
                                           >
                                             Delete
                                           </button>
@@ -712,9 +713,7 @@ const Admin = () => {
                                       </div>
                                     ))
                                   ) : (
-                                    <div className="p-2 text-sm text-gray-500">
-                                      No follow-ups yet
-                                    </div>
+                                    <p className="text-gray-600 text-sm mt-3">No follow-up questions yet.</p>
                                   )}
                                 </div>
                               )}
@@ -722,12 +721,7 @@ const Admin = () => {
                           </div>
                         ))
                       ) : (
-                        <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100 text-indigo-700 flex items-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                          </svg>
-                          No answers yet
-                        </div>
+                        <p className="text-gray-600">No answers for this question yet.</p>
                       )}
                     </div>
                   )}
@@ -744,50 +738,34 @@ const Admin = () => {
             ) : (
               filteredReports.map((report) => (
                 <div key={report.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Report #{report.id}</h3>
-                      <p className="text-gray-700 mb-4">{report.reason}</p>
-                      <div className="flex flex-wrap gap-3 text-sm text-gray-500">
-                        <span className="inline-flex items-center gap-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                          </svg>
-                          Reported by: {getUserName(report.user_id)}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                          </svg>
-                          {new Date(report.created_at).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Report ID: {report.id}</h3>
+                  <p className="text-gray-700 mb-2">
+                    <strong className="text-gray-800">Reason:</strong> {report.reason}
+                  </p>
+                  <p className="text-gray-700 mb-4">
+                    <strong className="text-gray-800">Category:</strong> {report.category_name}
+                  </p>
                   {report.question && (
-                    <div className="mt-4 bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <h4 className="font-medium text-gray-800 mb-2">Related Question:</h4>
-                      <p className="text-gray-800 font-medium">{report.question.title}</p>
-                      <p className="text-gray-600 text-sm mt-1">{report.question.description}</p>
-                      <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-500">
-                        <span className="inline-flex items-center gap-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                          </svg>
-                          {report.question.language}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                          </svg>
-                          {new Date(report.question.created_at).toLocaleString()}
-                        </span>
-                      </div>
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
+                      <p className="font-medium text-gray-800">Reported Question:</p>
+                      <p className="text-gray-700 text-sm italic">{report.question.title}</p>
                     </div>
                   )}
-
-                  <div className="mt-4 flex justify-end">
+                  <div className="flex flex-wrap gap-3 text-sm text-gray-500 mb-4">
+                    <span className="inline-flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                      {getUserName(report.user_id)}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                      </svg>
+                      {new Date(report.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-end">
                     <button
                       onClick={() => deleteReport(report.id)}
                       className="px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors font-medium flex items-center gap-2"
@@ -820,142 +798,62 @@ const Admin = () => {
             )}
           </div>
         ) : activeTab === 'users' ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No users found</td>
-                    </tr>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <label className="inline-flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={user.is_admin}
-                              onChange={(e) => updateUserAdminStatus(user.id, e.target.checked)}
-                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                              disabled={loading}
-                            />
-                          </label>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                          <button
-                            onClick={() => handleToggleActivation(user.id, !user.is_active)}
-                            disabled={loading}
-                            className={`${user.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} disabled:opacity-50`}
-                          >
-                            {user.is_active ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(user.id)}
-                            disabled={loading}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-gray-900">Frequently Asked Questions</h3>
-              <button
-                onClick={() => {
-                  setEditingFaq(null);
-                  setShowFaqForm(true);
-                }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                </svg>
-                Add New FAQ
-              </button>
-            </div>
-
-            {showFaqForm && (
-              <FaqForm
-                faq={editingFaq}
-                onCancel={() => {
-                  setShowFaqForm(false);
-                  setEditingFaq(null);
-                }}
-                onSubmit={editingFaq ? handleUpdateFaq : handleCreateFaq}
-              />
-            )}
-
-            {filteredFaqs.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 text-center">
-                <p className="text-gray-600">No FAQs found</p>
+                <p className="text-gray-600">No users found</p>
               </div>
             ) : (
-              filteredFaqs.map((faq) => (
-                <div key={faq.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
-                  <div className="flex justify-between items-start">
+              filteredUsers.map((u) => (
+                <div key={u.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.question}</h3>
-                      <p className="text-gray-700 whitespace-pre-line">{faq.answer}</p>
-                      <div className="mt-3 text-sm text-gray-500">
-                        <span className="inline-flex items-center gap-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                          </svg>
-                          Created by: {getUserName(faq.created_by)}
-                        </span>
-                        <span className="inline-flex items-center gap-1 ml-3">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                          </svg>
-                          {new Date(faq.created_at).toLocaleString()}
-                        </span>
-                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">{u.username}</h3>
+                      <p className="text-gray-600 text-sm">{u.email}</p>
+                      <p className="text-gray-600 text-xs mt-1">Joined: {new Date(u.created_at).toLocaleString()}</p>
                     </div>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${u.is_admin ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'}`}>
+                      {u.is_admin ? 'Admin' : 'User'}
+                    </span>
                   </div>
-                  
-                  <div className="mt-4 flex justify-end space-x-2">
+                  <div className="flex justify-end gap-3">
                     <button
-                      onClick={() => {
-                        setEditingFaq(faq);
-                        setShowFaqForm(true);
-                      }}
-                      className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-lg hover:bg-indigo-200 transition-colors text-sm"
+                      onClick={() => updateUserAdminStatus(u.id, !u.is_admin)}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+                        u.is_admin
+                          ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                          : 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
+                      }`}
                     >
-                      Edit
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zm-1.555 6.816A5.002 5.002 0 0110 13a5.002 5.002 0 01-1.445-.184l-2.618 1.619A1.5 1.5 0 005.152 15.63l-.756 2.37A1 1 0 004.99 19h10.02a1 1 0 00.593-1.002l-.756-2.37a1.5 1.5 0 00-.775-1.004l-2.618-1.619z" />
+                      </svg>
+                      {u.is_admin ? 'Demote to User' : 'Promote to Admin'}
                     </button>
                     <button
-                      onClick={() => handleDeleteFaq(faq.id)}
-                      className="px-3 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors text-sm"
+                      onClick={() => handleToggleActivation(u.id, !u.is_active)}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+                        u.is_active
+                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                          : 'bg-green-100 text-green-800 hover:bg-green-200'
+                      }`}
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        {u.is_active ? (
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        ) : (
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        )}
+                      </svg>
+                      {u.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(u.id)}
+                      className="px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors font-medium text-sm flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
                       Delete
                     </button>
                   </div>
@@ -963,7 +861,60 @@ const Admin = () => {
               ))
             )}
           </div>
-        )}
+        ) : activeTab === 'faqs' ? (
+          <div className="space-y-4">
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => { setShowFaqForm(true); setEditingFaq(null); }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                </svg>
+                Create New FAQ
+              </button>
+            </div>
+            {showFaqForm && (
+              <FaqForm
+                faq={editingFaq}
+                onCancel={() => { setShowFaqForm(false); setEditingFaq(null); }}
+                onSubmit={editingFaq ? handleUpdateFaq : handleCreateFaq}
+              />
+            )}
+            {filteredFaqs.length === 0 ? (
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 text-center">
+                <p className="text-gray-600">No FAQs found</p>
+              </div>
+            ) : (
+              filteredFaqs.map((faq) => (
+                <div key={faq.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.question}</h3>
+                  <p className="text-gray-700 mb-4">{faq.answer}</p>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={() => { setEditingFaq(faq); setShowFaqForm(true); }}
+                      className="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-lg hover:bg-indigo-200 transition-colors font-medium flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-7.387 7.388A4 4 0 019.172 14H8a1 1 0 01-1-1v-1.172a4 4 0 011.172-2.828l7.387-7.388zM14.5 9.5l.707.707L11.707 14H11v-.707l2.8-2.8z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteFaq(faq.id)}
+                      className="px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors font-medium flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );
