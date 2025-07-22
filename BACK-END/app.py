@@ -42,7 +42,7 @@ def create_app():
     app.config['MAIL_DEFAULT_SENDER'] = ('MoringaDesk Support Team', 'supportteam@moringadesk.com')  # ✅ Sender info
 
     # Database setup
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://moringadeskdb_user:L7JOySGGEISf79IsdLrnryfvLPk0ce1f@dpg-d1vjk07diees73bnlu9g-a.oregon-postgres.render.com/moringadeskdb'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # ✅ Initialize extensions
