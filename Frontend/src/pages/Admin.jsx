@@ -407,38 +407,77 @@ const Admin = () => {
   };
 
   // Filtered lists with nullish coalescing for safe .toLowerCase() calls
-// For questions
-const filteredQuestions = questions.filter(q =>
-  (q.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (q.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (q.language || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (getUserName(q.user_id) || '').toLowerCase().includes(searchTerm.toLowerCase()) // Ensure getUserName also returns a string or handled
-);
+// Assuming these are defined in your component that consumes AdminContext
+// e.g., in your Admin.js or similar file:
+// const { questions, reports, notifications, users, faqs, getUserName } = useAdmin();
+// const [searchTerm, setSearchTerm] = useState('');
 
-// For reports
-const filteredReports = reports.filter(r =>
-  (r.reason || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (r.question?.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (getUserName(r.user_id) || '').toLowerCase().includes(searchTerm.toLowerCase()) // Assuming reports have a user_id
-);
+// --- FILTER FOR QUESTIONS ---
+const filteredQuestions = questions.filter(q => {
+  // Ensure all properties potentially being searched are handled
+  const title = (q.title || '').toLowerCase();
+  const description = (q.description || '').toLowerCase();
+  const language = (q.language || '').toLowerCase();
+  const userName = (getUserName(q.user_id) || '').toLowerCase(); // getUserName is already robust, but `|| ''` adds extra safety.
 
-// For notifications
-const filteredNotifications = notifications.filter(n =>
-  (n.message || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (getUserName(n.user_id) || '').toLowerCase().includes(searchTerm.toLowerCase()) // Ensure getUserName always returns a string
-);
+  const lowerCaseSearchTerm = searchTerm.toLowerCase();
 
-// For users
-const filteredUsers = users.filter(u =>
-  (u.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-);
+  return title.includes(lowerCaseSearchTerm) ||
+         description.includes(lowerCaseSearchTerm) ||
+         language.includes(lowerCaseSearchTerm) ||
+         userName.includes(lowerCaseSearchTerm);
+});
 
-// For FAQs
-const filteredFaqs = faqs.filter(faq =>
-  (faq.question || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-  (faq.answer || '').toLowerCase().includes(searchTerm.toLowerCase())
-);
+// --- FILTER FOR REPORTS ---
+const filteredReports = reports.filter(r => {
+  // Ensure all properties potentially being searched are handled
+  const reason = (r.reason || '').toLowerCase();
+  // r.question could be null, then r.question.title would be undefined. Optional chaining handles this.
+  const questionTitle = (r.question?.title || '').toLowerCase();
+  const userName = (getUserName(r.user_id) || '').toLowerCase(); // Assuming report has a user_id
+
+  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+  return reason.includes(lowerCaseSearchTerm) ||
+         questionTitle.includes(lowerCaseSearchTerm) ||
+         userName.includes(lowerCaseSearchTerm);
+});
+
+// --- FILTER FOR NOTIFICATIONS ---
+const filteredNotifications = notifications.filter(n => {
+  // Ensure all properties potentially being searched are handled
+  const message = (n.message || '').toLowerCase();
+  const userName = (getUserName(n.user_id) || '').toLowerCase(); // Assuming notification has a user_id
+
+  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+  return message.includes(lowerCaseSearchTerm) ||
+         userName.includes(lowerCaseSearchTerm);
+});
+
+// --- FILTER FOR USERS ---
+const filteredUsers = users.filter(u => {
+  // Ensure all properties potentially being searched are handled
+  const username = (u.username || '').toLowerCase();
+  const email = (u.email || '').toLowerCase();
+
+  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+  return username.includes(lowerCaseSearchTerm) ||
+         email.includes(lowerCaseSearchTerm);
+});
+
+// --- FILTER FOR FAQs ---
+const filteredFaqs = faqs.filter(faq => {
+  // Ensure all properties potentially being searched are handled
+  const question = (faq.question || '').toLowerCase();
+  const answer = (faq.answer || '').toLowerCase();
+
+  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+  return question.includes(lowerCaseSearchTerm) ||
+         answer.includes(lowerCaseSearchTerm);
+});
 
   const getUserName = (userId) => {
     return userDetailsCache[userId]?.username || 'Loading...';
