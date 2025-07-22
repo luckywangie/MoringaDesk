@@ -11,7 +11,7 @@ def send_reset_email(to_email, reset_token):
 
         Click the link below to reset your password:
 
-        https://moringadesk-ckj3.onrender.com/reset-password?token={reset_token}
+        https://funny-sprite-8e31be.netlify.app/reset-password?token={reset_token}
 
         If you didn't request this, please ignore this email.
 
